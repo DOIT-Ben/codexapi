@@ -1,0 +1,299 @@
+Supplementary Material for "SAEFormer: Semantic-Aware Enhancement for
+Temporal Action Localization"
+
+This supplementary material provides additional ablation studies,
+complexity analysis, visualization analysis, and diagnostic analyses
+referenced in the main manuscript. Tables S1-S4 report additional
+ablations; Table S5 reports diagnostic error analysis; Table S6 reports
+model complexity; and Figs. S1-S3 report qualitative and visualization
+analyses. These analyses support the component effectiveness and
+interpretation of LMSF and BAE rather than introducing additional claims
+beyond the main manuscript.
+
+S1. Additional Ablation Studies
+
+Tables S1-S4 report additional ablations on THUMOS14. They cover the
+main component analysis under VideoMAE V2 features, LMSF design
+variants, BAE design variants, and the transfer of BAE to ActionFormer.
+Unless otherwise specified, LMSF and BAE are treated as detachable
+components in the supplementary ablations; the complete SAEBlock
+corresponds to enabling both components.
+
+Table S1.
+
+Main component analysis on THUMOS14 with VideoMAE V2 features. Best
+results are shown in bold.
+
+  --------------------------------------------------------------------------
+   Variant    LMSF     BAE     0.3     0.4     0.5     0.6     0.7    Avg.
+  --------- --------- ------ ------- ------- ------- ------- ------- -------
+     (A)        ✗       ✗     84.03   80.00   72.67   62.73   47.93   69.47
+
+     (B)        ✓       ✗     84.49   80.93   73.38   62.71   49.52   70.13
+
+     (C)        ✗       ✓     85.10   80.60   73.57   62.82   49.12   70.24
+
+     (D)        ✓       ✓     86.19   81.76   75.44   63.83   49.76   71.39
+  --------------------------------------------------------------------------
+
+Note: (A) denotes the baseline without LMSF or BAE; (B) adds LMSF only;
+(C) adds BAE only; and (D) denotes the full SAEFormer configuration with
+both LMSF and BAE enabled.
+
+Table S2 isolates the contribution of LMSF components under a matched
+THUMOS14 protocol. BAE is disabled for all rows, and the table
+progressively introduces LAE, CSM, and learnable scalar fusion to
+compare the plain block with increasingly complete LMSF variants. The
+full LMSF setting provides the strongest average mAP among the listed
+variants, supporting the use of local enhancement and learnable cue
+fusion around attention aggregation. However, the gain is not monotonic
+at every tIoU threshold; under I3D, full LMSF improves average mAP but
+is lower than the LAE+CSM setting at tIoU 0.7.
+
+Table S2.
+
+Ablation study of LMSF components on THUMOS14 using I3D and VideoMAE V2
+features with BAE disabled. Avg. mAP is computed over tIoU thresholds
+from 0.3 to 0.7 with a step of 0.1. The best results are highlighted in
+bold.
+
++----------+------------+-------+-----+-----------+-------+-------+-------+-------+
+| Backbone | Setting    | LAE   | CSM | Learnable | 0.3   | 0.5   | 0.7   | Avg.  |
+|          |            |       |     | Fusion    |       |       |       |       |
++:========:+:==========:+:=====:+:===:+:=========:+:=====:+:=====:+:=====:+:=====:+
+| I3D      | Plain      | ✗     | ✗   | ✗         | 81.89 | 72.34 | 46.03 | 67.89 |
+|          | Block      |       |     |           |       |       |       |       |
+|          +------------+-------+-----+-----------+-------+-------+-------+-------+
+|          | + LAE      | ✓     | ✗   | ✗         | 82.89 | 71.79 | 46.89 | 68.25 |
+|          +------------+-------+-----+-----------+-------+-------+-------+-------+
+|          | + LAE +    | ✓     | ✓   | ✗         | 83.17 | 71.98 | 47.40 | 68.38 |
+|          | CSM        |       |     |           |       |       |       |       |
+|          +------------+-------+-----+-----------+-------+-------+-------+-------+
+|          | Full LMSF  | ✓     | ✓   | ✓         | 83.57 | 73.53 | 46.84 | 69.16 |
++----------+------------+-------+-----+-----------+-------+-------+-------+-------+
+| VideoMAE | Plain      | ✗     | ✗   | ✗         | 84.03 | 72.67 | 47.93 | 69.47 |
+| V2       | Block      |       |     |           |       |       |       |       |
+|          +------------+-------+-----+-----------+-------+-------+-------+-------+
+|          | + LAE      | ✓     | ✗   | ✗         | 84.47 | 72.78 | 48.10 | 69.42 |
+|          +------------+-------+-----+-----------+-------+-------+-------+-------+
+|          | + LAE +    | ✓     | ✓   | ✗         | 84.96 | 73.51 | 48.33 | 69.93 |
+|          | CSM        |       |     |           |       |       |       |       |
+|          +------------+-------+-----+-----------+-------+-------+-------+-------+
+|          | Full LMSF  | ✓     | ✓   | ✓         | 84.49 | 73.38 | 49.52 | 70.13 |
++----------+------------+-------+-----+-----------+-------+-------+-------+-------+
+
+Table S3 evaluates the boundary modeling design under the matched
+plain-block protocol. LMSF is disabled for all rows. BAE-diff denotes a
+fixed-difference variant that keeps the channel calibration step but
+replaces the learnable temporal transition response branch with a
+hand-crafted first-order temporal difference operation. Specifically, it
+builds a one-dimensional temporal semantic sequence from channel-wise
+average and maximum responses with fixed equal weights, and then uses
+positive first-order differences to generate the boundary reweighting
+map. This variant is used to examine whether fixed temporal gradient
+cues are sufficient for boundary-oriented reweighting. Full BAE improves
+the average mAP under both I3D and VideoMAE V2 features, whereas
+BAE-diff is weak or unstable, suggesting that BAE mainly benefits from
+data-adaptive temporal reweighting responses learned under the TAL
+objective.
+
+Table S3.
+
+Ablation study of BAE variants on THUMOS14 using I3D and VideoMAE V2
+features with LMSF disabled. Avg. mAP is computed over tIoU thresholds
+from 0.3 to 0.7 with a step of 0.1. The best results are highlighted in
+bold.
+
++----------------+-------------+--------+--------+--------+---------+
+| Backbone       | Variant     | 0.3    | 0.5    | 0.7    | Avg.    |
++:==============:+:===========:+:======:+:======:+:======:+:=======:+
+| I3D            | w/o BAE     | 81.89  | 72.34  | 46.03  | 67.89   |
+|                +-------------+--------+--------+--------+---------+
+|                | BAE-diff    | 82.77  | 71.40  | 46.55  | 67.92   |
+|                +-------------+--------+--------+--------+---------+
+|                | Full BAE    | 83.09  | 72.57  | 48.64  | 69.18   |
++----------------+-------------+--------+--------+--------+---------+
+| VideoMAE V2    | w/o BAE     | 84.03  | 72.67  | 47.93  | 69.47   |
+|                +-------------+--------+--------+--------+---------+
+|                | BAE-diff    | 83.51  | 71.89  | 45.33  | 68.14   |
+|                +-------------+--------+--------+--------+---------+
+|                | Full BAE    | 85.10  | 73.57  | 49.12  | 70.24   |
++----------------+-------------+--------+--------+--------+---------+
+
+Note: BAE-diff is the fixed-difference variant described above. Full BAE
+denotes the proposed module with learnable directional temporal
+transition responses.
+
+Table S4 examines the transfer of BAE to ActionFormer. The module
+improves the I3D setting and yields only a small gain under VideoMAE V2
+(+0.08 Avg. mAP), suggesting that the gain depends partly on the
+strength of the input representation and the backbone-feature setting.
+We therefore use this result as conservative transfer evidence rather
+than as a claim of backbone-independent generalization.
+
+Table S4.
+
+Transfer analysis of BAE on ActionFormer using I3D and VideoMAE V2
+features on THUMOS14. Gain denotes the change in Avg. mAP compared with
+the corresponding ActionFormer baseline.
+
++-----------+----------------+-----+-------+-------+-------+-------+-------+-------+-------+
+| Backbone  | Method         | BAE | 0.3   | 0.4   | 0.5   | 0.6   | 0.7   | Avg.  | Gain  |
++:=========:+:==============:+:===:+:=====:+:=====:+:=====:+:=====:+:=====:+:=====:+:=====:+
+| I3D       | ActionFormer   | ✗   | 82.10 | 77.80 | 71.00 | 59.40 | 43.90 | 66.80 | –     |
+|           | [10]           |     |       |       |       |       |       |       |       |
+|           +----------------+-----+-------+-------+-------+-------+-------+-------+-------+
+|           | ActionFormer + | ✓   | 82.50 | 78.72 | 71.86 | 59.65 | 44.89 | 67.52 | +0.72 |
+|           | BAE            |     |       |       |       |       |       |       |       |
++-----------+----------------+-----+-------+-------+-------+-------+-------+-------+-------+
+| VideoMAE  | ActionFormer   | ✗   | 84.00 | 79.60 | 73.00 | 63.50 | 47.70 | 69.60 | –     |
+| V2        | [10]           |     |       |       |       |       |       |       |       |
+|           +----------------+-----+-------+-------+-------+-------+-------+-------+-------+
+|           | ActionFormer + | ✓   | 84.28 | 79.87 | 73.75 | 62.96 | 47.54 | 69.68 | +0.08 |
+|           | BAE            |     |       |       |       |       |       |       |       |
++-----------+----------------+-----+-------+-------+-------+-------+-------+-------+-------+
+
+S2. Diagnostic Error Analysis
+
+Table S5 provides a diagnostic error analysis on THUMOS14 using I3D
+features. Avg. mAP is computed over tIoU thresholds from 0.3 to 0.7 with
+a step of 0.1, while average boundary error and Top-1000 precision are
+evaluated at tIoU = 0.5. Boundary error is computed over class-aware,
+one-to-one matched prediction-ground-truth pairs. For each matched pair,
+the boundary error is defined as [], where [] and [] denote the
+predicted start and end timestamps, and [] and [] denote the
+corresponding ground-truth timestamps. The reported value is averaged
+over all matched pairs and measured in seconds. Top-1000 precision is
+computed from the globally top-ranked 1,000 predictions after
+post-processing, including NMS, where a true positive must match an
+unmatched ground-truth instance of the same class.
+
+The full SAEBlock configuration achieves the highest Avg. mAP and
+Top-1000 precision, and the lowest average boundary error among the
+listed variants. Notably, BAE alone does not consistently improve all
+diagnostic measures. Therefore, this analysis supports the combined
+LMSF+BAE design rather than serving as standalone causal evidence for
+BAE alone or as proof of an explicit boundary-supervision mechanism.
+
+Table S5.
+
+Diagnostic error analysis on THUMOS14 using I3D features. The best
+results are highlighted in bold.
+
+  -------------------------------------------------------------------------
+   Variant    LMSF       BAE     Avg. mAP↑    Avg. Boundary     Top-1000
+                                             Error @0.5 (s) ↓   Precision
+                                                               @0.5 (%) ↑
+  --------- --------- --------- ------------ ---------------- -------------
+     (A)        ✗         ✗        67.89          0.543           96.1
+
+     (B)        ✓         ✗        69.16          0.540           96.1
+
+     (C)        ✗         ✓        69.18          0.545           95.6
+
+     (D)        ✓         ✓        69.70          0.538           96.2
+  -------------------------------------------------------------------------
+
+Note: (A) denotes the baseline without LMSF or BAE; (B) adds LMSF only;
+(C) adds BAE only; and (D) denotes the full SAEBlock configuration with
+both LMSF and BAE enabled.
+
+S3. Complexity Analysis
+
+Table S6 reports model-level accuracy and complexity. SAEFormer has
+moderate computational overhead compared with lighter baselines, and
+this table is provided as supplementary evidence rather than as a claim
+of superior efficiency.
+
+Table S6.
+
+Complexity comparison on THUMOS14 with I3D features. The table reports
+average mAP, GMACs, and parameter count under the main I3D setting.
+
+  -----------------------------------------------------------------------
+       Method           Avg. mAP           GMACs ↓        Parameters ↓
+  ----------------- ----------------- ----------------- -----------------
+    ActionFormer          66.8              45.1              29.3M
+
+       TriDet             69.3              43.7              16.0M
+
+    TemporalMaxer         67.7              23.5              7.1M
+
+      ADSFormer           69.5              59.9              49.2M
+
+       DyFADet            69.2              45.8              27.6M
+
+  SAEFormer (Ours)        69.7              51.0              23.6M
+  -----------------------------------------------------------------------
+
+S4. Qualitative Localization Comparison
+
+Fig. S1 provides qualitative localization examples on THUMOS14 to
+compare the final predictions of ActionFormer and SAEFormer. These
+examples are intended as visual evidence complementary to the
+quantitative results, rather than standalone proof of boundary modeling.
+In the selected cases, SAEFormer produces predictions that are better
+aligned with the ground-truth temporal segments, especially near
+ambiguous action boundaries.
+
+[]
+
+Fig. S1. Qualitative localization comparison between ActionFormer and
+SAEFormer on THUMOS14. Green bars indicate ground-truth segments, while
+orange and yellow bars indicate predictions from ActionFormer and
+SAEFormer, respectively.
+
+S5. Visualization Analysis
+
+S5.1 Temporal Feature Similarity Analysis
+
+To further understand the effect of LMSF, we visualize temporal feature
+similarity at different processing stages. Specifically, we compute
+pairwise cosine similarities among temporal features before MHSA, after
+MHSA, and after the post-fusion output of LMSF. As shown in Fig. S2, the
+features before MHSA retain structured temporal similarity patterns.
+After MHSA, the similarity matrix exhibits stronger global similarity,
+suggesting that attention aggregation may smooth local temporal contrast
+and reduce discriminative differences among temporal positions. After
+LMSF, the heatmap shows a more structured similarity distribution,
+indicating that part of the local temporal contrast is preserved after
+cue fusion. This qualitative observation is consistent with the role of
+LMSF in mitigating the smoothing of local discriminative cues and
+preserving temporal discriminability. However, it should be interpreted
+as visualization-based supporting evidence rather than direct proof of
+an explicit boundary mechanism.
+
+[]
+
+Fig. S2. Temporal feature similarity across different processing stages
+of SAEBlock. The heatmaps show pairwise cosine similarities among
+temporal features before MHSA, after MHSA, and after the post-fusion
+output of LMSF. MHSA denotes Multi-Head Self-Attention, and LMSF denotes
+Learnable Multi-branch Semantic Fusion.
+
+S5.2 Boundary-Oriented Reweighting Analysis
+
+To further examine the behavior of BAE, we analyze the effective
+reweighting gain over different temporal regions. Fig. S3 summarizes the
+region-level gains of BAE0-BAE6 under a 10% boundary window. BAE0-BAE6
+denote the BAE modules in different SAEBlock layers ordered from shallow
+to deep along the forward path. Here, 10% denotes a temporal
+neighborhood around each ground-truth start and end boundary with a
+width equal to 10% of the corresponding action instance length, and this
+window is used to compute the average reweighting gain near boundaries.
+As shown in Fig. S3(a), later BAE layers tend to assign larger gains to
+boundary neighborhoods. Fig. S3(b) further reports the relative gain
+ratios between boundary regions and action interiors/background regions.
+BAE5 shows a relatively balanced boundary-oriented gain pattern, while
+BAE6 produces the strongest relative boundary emphasis. These
+observations provide diagnostic evidence that BAE can learn
+boundary-oriented temporal reweighting under the TAL objective, rather
+than relying on explicit boundary-level supervision.
+
+[]
+
+Fig. S3. Boundary-oriented reweighting analysis across BAE layers. (a)
+Region-level gains for boundary, action-interior, and background
+regions. (b) Relative gain ratios between boundary regions and action
+interiors/background regions. The shaded area highlights BAE5, and the
+dashed line denotes equal gain.

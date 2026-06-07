@@ -1,0 +1,9 @@
+.env
+data/
+postgres_data/
+redis_data/
+backups/
+caddy_data/
+caddy_config/
+*.log
+*.tar.gz

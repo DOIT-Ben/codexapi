@@ -1,0 +1,1043 @@
+Abstract
+
+Temporal action localization aims to identify action instances in
+untrimmed videos and predict their temporal boundaries. Existing
+Transformer-based methods improve temporal dependency modeling, but
+stacked attention aggregation may smooth short-range variations and
+weaken discriminative cues near ambiguous action boundaries. To address
+this problem, we propose SAEFormer, a representation-level cue
+enhancement framework for multi-scale temporal action localization. In
+this paper, the core of SAEFormer is SAEBlock, which consists of
+Learnable Multi-branch Semantic Fusion (LMSF) and Boundary-aware
+Enhancement (BAE). LMSF mitigates the smoothing effect on local
+discriminative cues around attention aggregation while preserving
+contextual information. BAE enhances transition-sensitive temporal
+representation cues by residually reweighting boundary-related temporal
+positions, and learns boundary-oriented reweighting without introducing
+an additional boundary-level loss.
+
+Experiments on three challenging benchmarks validate the competitiveness
+of SAEFormer. It achieves 69.7% and 71.4% average mAP on THUMOS14 under
+two feature settings, 36.7% on ActivityNet-1.3 under the main setting,
+and 26.5% / 23.7% for EPIC-KITCHENS-100 verb / noun localization.
+Ablation studies further show that LMSF and BAE provide complementary
+gains.
+
+Keywords: Temporal action localization, Untrimmed video understanding,
+Semantic-aware enhancement, Boundary-oriented reweighting
+
+Introduction
+
+Temporal action localization (TAL) is an important task in long-form
+intelligent video understanding. It aims to identify action instances in
+untrimmed videos and estimate their start and end timestamps [1,2],
+supporting applications such as video content analysis, multimedia
+retrieval, sports analysis, and intelligent surveillance [3-5]. In these
+scenarios, TAL converts weakly structured video streams into temporally
+localized action segments, providing structured evidence for retrieval,
+monitoring, and downstream decision-making. Unlike trimmed action
+recognition, TAL must reason over long temporal sequences that usually
+involve large variations in action duration, ambiguous action-background
+transitions [6], and a high proportion of background content. Therefore,
+TAL is sensitive not only to semantic recognition errors but also to
+small boundary shifts, because such shifts affect detection quality and
+downstream decision support under strict temporal
+intersection-over-union thresholds.
+
+Existing TAL methods have evolved from convolutional and
+graph-structured architectures to Transformer-based frameworks [7-11].
+Convolutional models provide useful local temporal inductive biases,
+whereas graph-structured designs model relations among clips or
+proposals. Transformer-based methods further apply attention along the
+temporal dimension to improve long-range temporal dependency modeling.
+In particular, ActionFormer [10] establishes a strong point-based
+baseline by combining local self-attention with multi-scale feature
+pyramids. This line of work has made attention-based temporal modeling a
+widely adopted direction in one-stage TAL. However, when multiple
+modules are stacked, attention-based context aggregation may also reduce
+local temporal contrast. It is therefore necessary to perform
+representation-level cue enhancement to complement the attention
+mechanism rather than replace the detection framework.
+
+This problem is particularly prominent in background-dominated videos.
+Attention aggregation helps exchange contextual information, but it may
+smooth short-range temporal variations and weaken differences between
+adjacent action and background clips. When multiple temporal modeling
+modules are stacked, this effect can be further amplified. Related
+studies on vision Transformers also suggest that self-attention may
+cause patch or token representations to converge or become over-smoothed
+[12,13]. In long-sequence TAL modeling, a similar tendency may further
+weaken boundary-sensitive local variations. As a result, a model may
+capture global context while still losing part of the local evidence
+needed to distinguish action starts, action interiors, and action ends.
+
+This observation raises two representation-level questions: how to
+preserve local discriminative cues during attention-based context
+aggregation, and how to enhance boundary-oriented temporal transitions
+without introducing additional boundary supervision. We argue that
+effective temporal localization requires representation-level cues with
+different roles. Local saliency and identity information help preserve
+short-range temporal contrast, convolutional modulation provides local
+context, and boundary-oriented temporal responses emphasize
+transition-sensitive positions. Therefore, we aim to organize these cues
+inside the temporal backbone, without replacing the attention-based
+backbone modeling paradigm or relying on additional boundary
+supervision.
+
+To address this problem, we propose SAEFormer, a one-stage, multi-scale,
+point-based framework for temporal action localization. In this paper,
+semantic-aware enhancement refers to representation-level cue
+enhancement rather than external semantic reasoning. SAEBlock preserves
+local discriminative cues before and after attention aggregation through
+lightweight learnable cue fusion. BAE learns boundary-oriented temporal
+reweighting through the standard temporal action localization objective,
+without adding boundary-level supervision.
+
+The main contributions of this paper are summarized as follows:
+
+We propose SAEBlock, in which LMSF mitigates the smoothing effect of
+stacked temporal attention on local discriminative cues during context
+aggregation, thereby improving the discriminability of temporal
+representations near boundaries.
+
+We introduce BAE, which enhances transition-sensitive temporal
+representation cues by residually reweighting boundary-related temporal
+positions, without requiring additional boundary supervision.
+
+We conduct extensive experiments on multiple mainstream datasets and
+achieve competitive performance, while systematic ablations on THUMOS14
+validate the effectiveness of the proposed modules.
+
+Related Work
+
+Temporal Action Localization (TAL)
+
+Temporal action localization (TAL) aims to locate and classify action
+instances in untrimmed videos. Existing TAL methods are commonly divided
+into two-stage and one-stage frameworks [14]. Two-stage methods such as
+BMN [15] and G-TAD [16] follow a proposal-then-classify paradigm, where
+candidate temporal segments are first generated and then classified.
+This design benefits from explicit proposal modeling, but the separation
+between proposal generation and classification may introduce error
+propagation and increase inference latency.
+
+One-stage methods reduce pipeline complexity by directly predicting
+temporal boundaries and action categories. CNN-based methods [17-19]
+improve end-to-end detection efficiency, while anchor-free methods such
+as AFSD [8] and DyFADet [20] further remove hand-crafted anchor design
+and shift toward direct boundary regression. More recent
+Transformer-based baselines, including RTD-Net [21], ActionFormer [10],
+and TallFormer [22], strengthen long-range temporal dependencies and
+have become strong reference frameworks. These developments reduce
+pipeline complexity, but long videos with variable action durations and
+background-dominated content still place high demands on reliable
+point-level classification and boundary regression.
+
+Temporal Context Modeling
+
+Effective temporal context modeling is essential for TAL because action
+instances vary substantially in duration and are often surrounded by
+background segments. Previous studies have explored convolution-based,
+graph-structured, and Transformer-based strategies [9,10,23]. CNN-based
+methods such as TCANet [17] and ContextLoc [18] aggregate
+multi-granularity temporal contexts, whereas graph-structured designs
+such as G-TAD [16] model relations among clips or proposals. These
+designs improve temporal dependency modeling, but their ability to
+jointly represent local boundary variations and long-range context
+remains limited in complex untrimmed videos.
+
+Recent studies have therefore introduced more adaptive or
+boundary-sensitive temporal modeling mechanisms. TriDet [24] replaces
+self-attention with convolutions adapted to different temporal scales,
+modeling local context at multiple granularities for point-based
+detection. TemporalMaxer [25] revisits max-pooling-based context
+aggregation, and CTAN [26] combines convolution with Transformer-style
+modeling to preserve fine-grained local variations. DyFADet [20]
+adaptively adjusts receptive fields and convolutional weights for
+actions of different durations, while a diffusion-based method [27]
+introduces generative denoising diffusion to improve temporal action
+detection. Related methods such as ASL [28], TE-TAD [29], DualH [19],
+and BRTAL [30] further emphasize the importance of action-sensitive
+representation learning, time-aligned detection, hierarchical temporal
+modeling, and boundary refinement. These studies mainly modify temporal
+operators, detection heads, or refinement mechanisms. How to preserve
+cue diversity inside attention blocks remains less directly discussed.
+
+Transformer-Based TAL Methods
+
+Transformers have achieved strong performance in sequence modeling [23]
+and have been widely adopted in temporal action localization.
+ActionFormer [10] integrates local self-attention with a feature pyramid
+and establishes a strong point-based Transformer baseline. TallFormer
+[22] introduces a long-memory mechanism to reduce the cost of processing
+high-resolution long videos. TeST [31] adopts a temporal-spatial
+separated Transformer architecture to jointly model spatial and temporal
+cues, and DiGIT [32] advances query-based Transformer detection through
+a multi-dilated gated encoder and a central-adjacent decoder. These
+methods mainly improve temporal dependency modeling and decoding
+strategies over long video sequences.
+
+Other studies extend representation learning and training paradigms for
+Transformer-based temporal action localization from complementary
+perspectives. ADS [11] introduces a dual selective token-mixing
+mechanism to suppress redundant information and enhance discriminative
+boundary representations. TFFormer [33] performs cross time-frequency
+interaction to capture local temporal details and global frequency
+patterns. AdaTAD [34] explores end-to-end temporal action localization
+based on large-scale VideoMAE, and Dual DETRs [35] use instance-level
+and boundary-level queries for multi-label TAD. In parallel with these
+Transformer-based directions, State-Sensitive Mamba [36] advances
+temporal localization from the perspective of state-space long-sequence
+modeling. Different from methods that mainly improve temporal operators,
+query decoders, or training paradigms, SAEFormer starts from
+representation enhancement inside the Transformer backbone. It uses LMSF
+to mitigate the smoothing effect of attention aggregation on local
+discriminative cues and BAE to perform boundary-oriented reweighting on
+boundary-related temporal positions. In the full configuration, these
+two modules jointly form SAEBlock and improve the discriminability of
+representations near boundaries.
+
+Preliminaries
+
+Given an input video, a sequence of clip-level features is first
+extracted by a pre-trained video feature extractor, such as I3D [37] or
+SlowFast [38]. The extracted feature sequence is denoted as , where
+denotes the number of temporal clips and denotes the feature vector of
+the t-th clip. The goal of temporal action localization is to predict a
+set of action instances from the extracted feature sequence , where
+denotes the number of action instances. The n-th () element in is
+defined as , where and denote the start and end temporal indices,
+respectively, denotes the category label, and denotes the total number
+of predefined action categories.
+
+Following the point-based TAL paradigm, the feature sequence can be
+represented by a set of temporal points, where each point is responsible
+for action classification and boundary regression. For a temporal point
+located inside an action instance , the boundary regression targets are
+defined as follows.:
+
+where and denote the distances from to the start and end boundaries,
+respectively. To accommodate action instances with different temporal
+durations, point-based TAL methods commonly perform prediction on
+multi-scale temporal features, where high-resolution levels are used for
+short actions and low-resolution levels are used for long actions.
+
+Methodology
+
+As shown in Fig. 1, SAEFormer takes pre-extracted clip-level features as
+input. After embedding projection, the features enter a temporal
+encoding backbone stacked with SAEBlocks. In this paper, "semantic"
+specifically refers to action-related discriminative representation cues
+encoded by pre-trained video features, including action-background
+discrimination cues, local temporal variation cues, and boundary
+transition cues. It does not refer to external language semantics,
+category-name semantics, or knowledge-based reasoning semantics. In the
+full configuration, SAEBlock consists of Learnable Multi-branch Semantic
+Fusion (LMSF) and BAE. The two modules can also be ablated as separable
+components, where LMSF is responsible for local cue preservation and BAE
+for boundary-oriented reweighting. The multi-scale features are then
+used by a 1D feature pyramid and point-based classification and boundary
+decoding heads to generate predictions, followed by Soft-NMS for
+redundancy removal.
+
+Fig. . Overall architecture of SAEFormer. SAEFormer first maps
+pre-extracted clip-level features into a unified embedding space, and
+then generates multi-scale temporal features through a temporal encoding
+backbone composed of stacked SAEBlocks. A full SAEBlock consists of
+Learnable Multi-branch Semantic Fusion (LMSF) and Boundary-aware
+Enhancement (BAE). In the ablation experiments, the two modules are
+enabled separately as separable components. The multi-scale features are
+fed into a 1D feature pyramid and point-based classification and
+boundary decoding heads to predict action categories and temporal
+boundaries.
+
+Learnable Multi-branch Semantic Fusion (LMSF)
+
+As shown in Fig. 2, LMSF contains Convolutional Semantic Modulation
+(CSM), an identity reference, and Local Activation Enhancement (LAE). It
+performs two-stage fusion around Multi-Head Self-Attention (MHSA) to
+preserve local discriminative cues during attention aggregation.
+
+Fig. . Schematic diagram of LMSF.
+
+Multi-branch feature extraction. CSM obtains convolutionally modulated
+features, the identity branch preserves the downsampled input, and LAE
+preserves short-range peak responses through temporal max pooling,
+serving as a complementary cue for local discrimination and boundary
+variation.
+
+First-stage Fusion. The above three branches are fused using learnable
+scalar weights, which are optimized end-to-end. Let ,and denote the
+semantic modulation feature, identity feature, and local saliency
+feature, respectively. The first-stage fusion is formulated as:
+
+where ,and are learnable scalar weights in the current SAEBlock. We
+adopt simple element-wise weighted summation for feature fusion, which
+preserves the channel dimension and avoids the additional projection
+layer required by concatenation-based fusion.
+
+Convolutional Temporal Attention. The fused representation ​ is then
+refined by a convolutional temporal attention module. Instead of
+directly using linear projections to generate query, key, and value
+features, we adopt lightweight convolutional projections:
+
+Here, denotes a depth-wise convolution. This design introduces local
+temporal inductive bias before attention computation while keeping the
+projection lightweight. For the-th attention head, the attention output
+is computed as:
+
+where , is the number of attention heads, and ,anddenote the query, key,
+and value features of the j-th head. In implementation, the valid
+temporal mask is applied in the attention computation to prevent padded
+positions from participating in feature aggregation.
+
+The outputs of all heads are concatenated and projected to obtain the
+final attention-enhanced representation:
+
+According to the configured attention pattern, this module can be
+instantiated as either global masked temporal attention or local window
+attention.
+
+Second-stage Fusion. To further integrate the information after
+attention, a second learnable scalar fusion is applied among the local
+saliency feature, the first-stage fused representation, and the
+attention-enhanced feature:
+
+where ,, ​are another three learnable scalar weights.
+
+Re-incorporating at this stage provides an additional local reference
+after attention, which may help retain locally peaked responses and
+boundary-sensitive temporal cues during feature aggregation.
+
+Residual Connection. The output of LMSF is passed through the residual
+path of the SAEBlock. Specifically, the fused representation is first
+scaled by a learnable affine parameter before being added back to the
+residual input through stochastic depth:
+
+where ​ denotes the residual input after the optional downsampling
+operation, and denotes the learnable scale parameter. The scale
+parameter is initialized with a small value to stabilize early training
+by suppressing the residual branch.
+
+The six fusion weights in LMSF are learned independently in each
+SAEBlock. They are scalar parameters rather than channel-level,
+temporal-level, or sample-level gates, and they are not normalized by
+softmax. Therefore, LMSF should be understood as block-wise learnable
+scalar cue fusion rather than an input-dependent routing mechanism. For
+the fusion weights of LMSF, each SAEBlock introduces only six additional
+block-wise scalar fusion parameters.
+
+Boundary-aware Enhancement
+
+BAE is inspired by channel recalibration [39], as shown in Fig. 3,
+channel recalibration highlights informative channels, and subsequent
+learnable temporal transition responses form boundary-related
+reweighting. Action boundaries usually correspond to transition regions
+from background to action or from action to background. BAE learns this
+reweighting response to enhance boundary-related positions.
+
+Fig. . Schematic diagram of BAE.
+
+The channel calibration weight is computed as:
+
+where denotes a shared MLP implemented by two 1×1 convolutions, and is
+the sigmoid activation function. The calibrated feature is then obtained
+as:
+
+where ⊙ denotes element-wise multiplication. This calibration step
+encourages the module to focus on channels that are more relevant to
+temporal action patterns before modeling boundary-related variations.
+
+Then, a compact one-dimensional semantic sequence is constructed by
+computing the average and peak responses along the channel dimension:
+
+where and are in , these two responses provide complementary temporal
+descriptions. The average response summarizes the overall temporal
+semantics, while the peak response preserves locally salient
+activations. To balance these two types of temporal cues, BAE combines
+them using learnable semantic mixing weights:
+
+where and are two learnable scalar logits used to generate the mixing
+weights for the average and peak semantic responses. The mixed semantic
+sequence is then fed into a lightweight temporal pattern extraction
+branch:
+
+where ReLU denotes the nonlinear activation function. The two output
+channels and describe rising and falling temporal transition responses,
+respectively. These responses may provide useful cues for action starts
+and ends, but they are not supervised by explicit boundary labels.
+Instead, they are learned implicitly through the final TAL objective.
+The boundary-aware temporal response is computed as:
+
+where . We use additive fusion rather than competitive normalization
+because rising and falling responses may provide complementary
+information for temporal transitions. Since serves as a temporal
+reweighting map rather than a normalized probability distribution, both
+responses are allowed to contribute jointly. Finally, BAE enhances the
+calibrated feature through a residual boundary-aware weight:
+
+where is broadcast along the channel dimension. The residual form
+preserves the calibrated feature while increasing the responses at
+temporal positions with stronger boundary-related cues. Compared with
+fixed first-order difference operators, the learnable rising/falling
+branch provides a data-adaptive way to model boundary-sensitive temporal
+variations. The effectiveness of this design is evaluated in the
+ablation study by comparing it with the fixed-difference variant.
+
+Point-Based Classification and Boundary Decoding
+
+After the SAEBackbone, the enhanced temporal features are arranged into
+a multi-scale temporal feature pyramid. Each pyramid level corresponds
+to a different temporal stride, allowing short and long action instances
+to be handled at different temporal resolutions. Let the feature pyramid
+be denoted as
+
+where denotes the temporal feature at the l-th pyramid level and L is
+the number of pyramid levels. Following the point-based TAL paradigm, a
+classification branch predicts action category logits at each temporal
+point, while a regression branch estimates the distances to the start
+and end boundaries:
+
+where denotes the classification logits at the t-th temporal point of
+the l-th pyramid level, and and denote the predicted distances to the
+start and end boundaries, respectively.
+
+In the main configuration, the regression branch adopts a Trident-style
+[24] boundary decoding design. Instead of relying only on direct offset
+regression, it further uses center offset logits and start/end boundary
+neighbor logits to estimate temporal offsets. The final left and right
+offsets are obtained from the predicted boundary distributions and are
+used to decode the action segment as:
+
+Following the point-based TAL paradigm, the detection head serves as a
+standard prediction interface. It converts the multi-scale temporal
+representations produced by SAEBackbone into category scores and
+temporal boundary offsets.
+
+Training and Inference
+
+Following standard point-based temporal action localization methods
+[10,24], temporal points are assigned labels during training according
+to ground-truth segments, regression ranges, and center-sampling
+constraints. We use sigmoid focal loss for classification and
+one-dimensional DIoU loss for boundary regression on positive samples:
+
+This objective combines the classification loss and boundary regression
+loss with a balancing coefficient λreg. BAE does not introduce an
+additional boundary-level loss. Its boundary-oriented temporal
+reweighting is learned indirectly through the final temporal action
+localization objective.
+
+During inference, SAEFormer filters low-confidence temporal points,
+decodes top-ranked candidate points into action segments, and applies
+Soft-NMS to remove redundant predictions:
+
+Each output contains the predicted start time, end time, category, and
+confidence score.
+
+Experiments
+
+Experimental Setup
+
+Datasets
+
+We evaluate the proposed SAEFormer on three challenging benchmarks:
+THUMOS14 [40], ActivityNet-1.3 [1], and EPIC-KITCHENS-100 [41]. THUMOS14
+contains 413 untrimmed videos covering 20 action categories. It is
+divided into validation and test subsets, with 200 videos for validation
+and 213 videos for testing. ActivityNet-1.3 is a large-scale action
+dataset containing 200 activity classes and approximately 20,000 videos,
+with a total duration of more than 600 hours. It is divided into three
+subsets: 10,024 training videos, 4,926 validation videos, and 5,044 test
+videos. EPIC-KITCHENS-100 is a large-scale egocentric action dataset. It
+contains 100 hours of video from 700 sessions, recording cooking
+activities in different kitchens.
+
+Evaluation Metrics
+
+To evaluate the effectiveness of the proposed method, we follow common
+evaluation protocols in temporal action localization [10,22,24].
+Performance is measured by mean average precision (mAP) under multiple
+temporal Intersection over Union (tIoU) thresholds. The tIoU thresholds
+are set to [0.3: 0.1: 0.7] for THUMOS14, [0.5: 0.05: 0.95] for
+ActivityNet-1.3, and [0.1: 0.1: 0.5] for EPIC-KITCHENS-100. The notation
+[start: step: end] denotes a set of thresholds that starts from start,
+uses step as the interval, and ends at end. For example, [0.3: 0.1: 0.7]
+corresponds to 0.3, 0.4, 0.5, 0.6, and 0.7. The other threshold settings
+follow the same notation rule.
+
+Implementation Details
+
+All experiments use pre-extracted clip-level features: THUMOS14 uses I3D
+[37] and VideoMAE V2 [42], ActivityNet-1.3 reports results with both I3D
+and TSP [43] features, and EPIC-KITCHENS-100 uses SlowFast [38]. Unless
+otherwise stated, the ActivityNet implementation details refer to the
+main TSP setting. The experiments are implemented in Python 3.10 with
+PyTorch 2.10.0 and CUDA 12.8, and are run on two NVIDIA RTX 3090 GPUs.
+We train for 54, 50, 17, 30, and 33 epochs on THUMOS14-I3D,
+THUMOS14-VideoMAE V2, ActivityNet-1.3, EPIC-KITCHENS-100 noun, and
+EPIC-KITCHENS-100 verb, respectively, with 24, 20, 5, 7, and 10 warm-up
+epochs. The optimizer uses cosine annealing [44] together with AdamW
+[45]. The learning rate is 1e-4 for THUMOS14 and EPIC-KITCHENS-100, and
+1e-3 for ActivityNet-1.3. The batch sizes for THUMOS14-I3D,
+THUMOS14-VideoMAE V2, ActivityNet-1.3, EPIC-KITCHENS-100 noun, and
+EPIC-KITCHENS-100 verb are 2, 2, 16, 2, and 2, respectively.
+
+In addition to the above settings, we follow point-level label
+assignment, center sampling, regression range settings, candidate
+filtering, and Soft-NMS post-processing protocols consistent with the
+ActionFormer-style baseline. Because different datasets and feature
+settings have different temporal resolutions and action-duration
+distributions, the local window, MLP dimension, number of candidates,
+and NMS parameters are set according to the corresponding dataset
+configuration. Within the same dataset, the main model and ablation
+experiments use consistent training, inference, and evaluation
+protocols.
+
+Comparison Results on Public Datasets
+
+Tables 1-3 compare SAEFormer with state-of-the-art temporal action
+localization methods on THUMOS14, ActivityNet-1.3, and
+EPIC-KITCHENS-100. For transparency, each table reports the video
+features or feature extractors used by comparison methods when
+available, and includes publicly reported results under the
+corresponding evaluation protocols. Because different results use
+different pre-trained features, these results should be interpreted as
+comparisons based on public reports rather than strictly controlled
+comparisons under a unified feature setting.
+
+THUMOS14
+
+On THUMOS14, SAEFormer achieves average mAP scores of 69.7% and 71.4%
+under the I3D and VideoMAE V2 feature settings, respectively, obtaining
+the best average results among the publicly reported results listed in
+Table 1. Specifically, under the I3D setting, SAEFormer obtains a small
+advantage over recent methods. Under the VideoMAE V2 setting, SAEFormer
+achieves strong results in average mAP and at most tIoU thresholds, but
+it does not surpass existing methods at every threshold.
+
+For the VideoMAE V2 comparison, we use the VideoMAE V2 model of Wang et
+al. [42] to extract features and report it separately from I3D-based
+comparisons to avoid direct confusion between different feature
+settings. Because the number of publicly reported same-feature VideoMAE
+V2 results is still limited, this setting is mainly used to show the
+performance of SAEFormer when combined with stronger video
+representations, rather than to provide a complete ranking of all
+methods under unified features.
+
+Table 1.
+
+Comparison with existing temporal action localization methods on the
+THUMOS14 dataset. The best results are highlighted in bold.
+
++---------------+----------+----------+-------------------------------------------------+------+
+| Method        | Venue    | Backbone | tIoU                                            | Avg  |
+|               |          |          +---------+---------+---------+---------+---------+      |
+|               |          |          | @0.3    | @0.4    | @0.5    | @0.6    | @0.7    |      |
++===============+==========+==========+=========+=========+=========+=========+=========+======+
+| ActionFormer  | ECCV     | I3D      | 82.1    | 77.8    | 71      | 59.4    | 43.9    | 66.8 |
+| [10]          | 2022     |          |         |         |         |         |         |      |
+|               |          +----------+---------+---------+---------+---------+---------+------+
+|               |          | VideoMAE | 84      | 79.6    | 73      | 63.5    | 47.7    | 69.6 |
+|               |          | V2       |         |         |         |         |         |      |
++---------------+----------+----------+---------+---------+---------+---------+---------+------+
+| TemporalMaxer | arXiv    | I3D      | 82.8    | 78.9    | 71.8    | 60.5    | 44.7    | 67.7 |
+| [25]          | 2023     |          |         |         |         |         |         |      |
++---------------+----------+----------+---------+---------+---------+---------+---------+------+
+| TriDet [24]   | CVPR     | I3D      | 83.6    | 80.1    | 72.9    | 62.4    | 47.4    | 69.3 |
+|               | 2023     |          |         |         |         |         |         |      |
++---------------+----------+----------+---------+---------+---------+---------+---------+------+
+| TFFormer [33] | T-CSVT   | I3D      | 82.1    | 78.9    | 72      | 60.8    | 44.9    | 67.8 |
+|               | 2024     |          |         |         |         |         |         |      |
++---------------+----------+----------+---------+---------+---------+---------+---------+------+
+| ASL [28]      | ICCV     | I3D      | 83.1    | 79.0    | 71.7    | 59.7    | 45.8    | 67.9 |
+|               | 2023     |          |         |         |         |         |         |      |
++---------------+----------+----------+---------+---------+---------+---------+---------+------+
+| TE-TAD [29]   | CVPR     | I3D      | 83.3    | 78.4    | 71.3    | 60.7    | 45.6    | 67.9 |
+|               | 2024     |          |         |         |         |         |         |      |
++---------------+----------+----------+---------+---------+---------+---------+---------+------+
+| DualH [19]    | FG 2024  | I3D      | 83.6    | 79.5    | 72.2    | 60      | 44.9    | 68   |
++---------------+----------+----------+---------+---------+---------+---------+---------+------+
+| CTAN [26]     | KBS 2024 | I3D      | 82.9    | 79.7    | 72.2    | 61.2    | 45.7    | 68.3 |
+|               |          +----------+---------+---------+---------+---------+---------+------+
+|               |          | VideoMAE | 84.5    | 80.6    | 74.6    | 61.8    | 48.9    | 70.1 |
+|               |          | V2       |         |         |         |         |         |      |
++---------------+----------+----------+---------+---------+---------+---------+---------+------+
+| DyFADet [20]  | ECCV     | I3D      | 84      | 80.1    | 72.7    | 61.1    | 47.9    | 69.2 |
+|               | 2024     |          |         |         |         |         |         |      |
++---------------+----------+----------+---------+---------+---------+---------+---------+------+
+| GDD-TAD [27]  | KBS 2024 | I3D      | 83.1    | 79.2    | 73.5    | 63.1    | 48      | 69.4 |
++---------------+----------+----------+---------+---------+---------+---------+---------+------+
+| ADSFormer     | TMM 2024 | I3D      | 84.4    | 80.0    | 73.1    | 62.9    | 46.9    | 69.5 |
+| [11]          |          |          |         |         |         |         |         |      |
+|               |          +----------+---------+---------+---------+---------+---------+------+
+|               |          | VideoMAE | 85.3    | 80.8    | 73.9    | 64      | 49.8    | 70.8 |
+|               |          | V2       |         |         |         |         |         |      |
++---------------+----------+----------+---------+---------+---------+---------+---------+------+
+| BRTAL [30]    | T-CSVT   | I3D      | 84.2    | 80.2    | 73.1    | 63      | 47.6    | 69.6 |
+|               | 2025     |          |         |         |         |         |         |      |
++---------------+----------+----------+---------+---------+---------+---------+---------+------+
+| SAEFormer     | -        | I3D      | 83.8    | 80.5    | 73.4    | 62.7    | 48.1    | 69.7 |
+|               |          |          |         |         |         |         |         |      |
+| (Ours)        |          |          |         |         |         |         |         |      |
+|               |          +----------+---------+---------+---------+---------+---------+------+
+|               |          | VideoMAE | 86.2    | 81.8    | 75.4    | 63.8    | 49.8    | 71.4 |
+|               |          | V2       |         |         |         |         |         |      |
++---------------+----------+----------+---------+---------+---------+---------+---------+------+
+
+ActivityNet-1.3
+
+On ActivityNet-1.3, SAEFormer achieves 36.5% average mAP with I3D
+features and 36.7% with TSP R(2+1)D features, as shown in Table 2.
+Compared with the corresponding I3D baseline, SAEFormer shows an
+improvement, whereas the gain is less pronounced under the TSP setting.
+This is partly because the ActivityNet localization protocol used here
+is class-agnostic, with only one foreground action class in the
+detection head. As a result, category-discriminative cues contribute
+less to the final metric, and performance depends more on proposal
+quality and long-range temporal coverage. Therefore, local boundary cue
+enhancement alone brings more limited gains on this benchmark.
+
+Table 2.
+
+Comparison with existing temporal action localization methods on the
+ActivityNet-1.3 dataset. The best results are highlighted in bold.
+
++--------------+------------+----------+-----------------------------------+-------+
+| Method       | Venue      | Backbone | tIoU                              | Avg   |
+|              |            |          +-----------+-----------+-----------+       |
+|              |            |          | @0.5      | @0.75     | @0.95     |       |
++==============+============+==========+===========+===========+===========+=======+
+| ActionFormer | ECCV 2022  | I3D      | 53.5      | 36.2      | 8.2       | 35.6  |
+| [10]         |            |          |           |           |           |       |
+|              |            +----------+-----------+-----------+-----------+-------+
+|              |            | R(2+1)D  | 54.7      | 37.8      | 8.4       | 36.6  |
++--------------+------------+----------+-----------+-----------+-----------+-------+
+| TriDet [24]  | CVPR 2023  | R(2+1)D  | 54.7      | 38.0      | 8.4       | 36.8  |
++--------------+------------+----------+-----------+-----------+-----------+-------+
+| TFFormer     | T-CSVT     | I3D      | 54.4      | 36.7      | 7.5       | 35.8  |
+| [33]         | 2024       |          |           |           |           |       |
+|              |            +----------+-----------+-----------+-----------+-------+
+|              |            | R(2+1)D  | 54.5      | 37.3      | 7.6       | 36.2  |
++--------------+------------+----------+-----------+-----------+-----------+-------+
+| ASL [28]     | ICCV 2023  | I3D      | 54.1      | 37.4      | 8.0       | 36.2  |
++--------------+------------+----------+-----------+-----------+-----------+-------+
+| DualH [19]   | FG 2024    | I3D      | 54.4      | 37.1      | 8.1       | 36.3  |
++--------------+------------+----------+-----------+-----------+-----------+-------+
+| FAM [46]     | ICMRA 2024 | I3D      | 54.6      | 37.2      | 8.3       | 36.3  |
++--------------+------------+----------+-----------+-----------+-----------+-------+
+| MFAM [47]    | TIP 2024   | I3D      | 54.7      | 37.3      | 8.6       | 36.6  |
++--------------+------------+----------+-----------+-----------+-----------+-------+
+| CTAN [26]    | KBS 2024   | R(2+1)D  | 55.6      | 38.6      | 7.6       | 37.2  |
++--------------+------------+----------+-----------+-----------+-----------+-------+
+| GDD-TAD [27] | KBS 2024   | R(2+1)D  | 56.5      | 38.6      | 8.5       | 37.4  |
++--------------+------------+----------+-----------+-----------+-----------+-------+
+| BRTAL [30]   | T-CSVT     | I3D      | 54.8      | 37.9      | 8.3       | 36.7  |
+|              | 2025       |          |           |           |           |       |
+|              |            +----------+-----------+-----------+-----------+-------+
+|              |            | R(2+1)D  | 55.1      | 38.1      | 8.5       | 37    |
++--------------+------------+----------+-----------+-----------+-----------+-------+
+| SAEFormer    | -          | I3D      | 54.6      | 37.1      | 9.3       | 36.5  |
+| (Ours)       |            |          |           |           |           |       |
+|              |            +----------+-----------+-----------+-----------+-------+
+|              |            | R(2+1)D  | 54.78     | 37.74     | 8.21      | 36.7  |
++--------------+------------+----------+-----------+-----------+-----------+-------+
+
+EPIC-KITCHENS-100
+
+On EPIC-KITCHENS-100, SAEFormer achieves 26.5% average mAP for verb
+localization and 23.7% for noun localization, as shown in Table 3. These
+results are consistent with the fine-grained and egocentric nature of
+EPIC-KITCHENS-100, where action instances are defined by verb-noun
+interactions in untrimmed first-person videos. Compared with
+activity-level benchmarks such as ActivityNet, verb localization in
+EPIC-KITCHENS-100 is more directly associated with hand motion dynamics,
+temporal transition patterns, and start-end boundary changes. These
+factors are aligned with the design of SAEFormer, which enhances local
+temporal cues and boundary-oriented representation cues. In contrast,
+noun localization depends more heavily on fine-grained object appearance
+and hand-object interactions. Since SAEFormer does not explicitly
+introduce object-centric modeling, the noun result should be interpreted
+as competitive rather than consistently superior to the strongest noun
+baseline.
+
+Table 3.
+
+Comparison with existing temporal action localization methods on the
+EPIC-KITCHENS-100 dataset. The best results are highlighted in bold.
+
++---------+-----------------------------------------------------------------------------------------------------------------------+
+|         | V.（Verb）                                                                                                            |
++=========+==============+==============+==============+==============+==============+==============+==============+==============+
+| Method                 | Venue        | tIoU                                                                     | Avg          |
+|                        |              +--------------+--------------+--------------+--------------+--------------+              |
+|                        |              | @0.1         | @0.2         | @0.3         | @0.4         | @0.5         |              |
++------------------------+--------------+--------------+--------------+--------------+--------------+--------------+--------------+
+| ActionFormer [10]      | ECCV 2022    | 26.6         | 25.4         | 24.2         | 22.3         | 19.1         | 23.5         |
++------------------------+--------------+--------------+--------------+--------------+--------------+--------------+--------------+
+| TemporalMaxer [25]     | arXiv 2023   | 27.8         | 26.6         | 25.3         | 23.1         | 19.9         | 24.5         |
++------------------------+--------------+--------------+--------------+--------------+--------------+--------------+--------------+
+| ASL [28]               | ICCV 2023    | 27.9         | -            | 25.5         | -            | 19.8         | 24.6         |
++------------------------+--------------+--------------+--------------+--------------+--------------+--------------+--------------+
+| TriDet [24]            | CVPR 2023    | 28.6         | 27.4         | 26.1         | 24.2         | 20.8         | 25.4         |
++------------------------+--------------+--------------+--------------+--------------+--------------+--------------+--------------+
+| TE-TAD [29]            | CVPR 2024    | 27.9         | 26.8         | 25.4         | 23.4         | 20           | 24.7         |
++------------------------+--------------+--------------+--------------+--------------+--------------+--------------+--------------+
+| DualH [19]             | FG 2024      | 28           | 27.1         | 25.4         | 23.1         | 19.9         | 24.7         |
++------------------------+--------------+--------------+--------------+--------------+--------------+--------------+--------------+
+| GDD-TAD [27]           | KBS 2024     | 29.5         | 28.2         | 26.9         | 24.1         | 20.8         | 25.9         |
++------------------------+--------------+--------------+--------------+--------------+--------------+--------------+--------------+
+| BRTAL [30]             | T-CSVT 2025  | 28.4         | 27.4         | 25.9         | 24.7         | 21           | 25.4         |
++------------------------+--------------+--------------+--------------+--------------+--------------+--------------+--------------+
+| SAEFormer (Ours)       | -            | 29.9         | 29.0         | 27.4         | 25.0         | 21.3         | 26.5         |
++---------+--------------+--------------+--------------+--------------+--------------+--------------+--------------+--------------+
+|         | N.（Noun）                                                                                                            |
++---------+--------------+--------------+--------------------------------------------------------------------------+--------------+
+| Method                 | Venue        | tIoU                                                                     | Avg          |
+|                        |              +--------------+--------------+--------------+--------------+--------------+              |
+|                        |              | @0.1         | @0.2         | @0.3         | @0.4         | @0.5         |              |
++------------------------+--------------+--------------+--------------+--------------+--------------+--------------+--------------+
+| ActionFormer [10]      | ECCV 2022    | 25.2         | 24.1         | 22.7         | 20.5         | 17           | 21.9         |
++------------------------+--------------+--------------+--------------+--------------+--------------+--------------+--------------+
+| TemporalMaxer [25]     | arXiv 2023   | 26.3         | 25.2         | 23.5         | 21.3         | 17.6         | 22.8         |
++------------------------+--------------+--------------+--------------+--------------+--------------+--------------+--------------+
+| ASL [28]               | ICCV 2023    | 26           | -            | 23.4         | -            | 17.7         | 22.6         |
++------------------------+--------------+--------------+--------------+--------------+--------------+--------------+--------------+
+| TriDet [24]            | CVPR 2023    | 27.4         | 26.3         | 24.6         | 22.2         | 18.3         | 23.8         |
++------------------------+--------------+--------------+--------------+--------------+--------------+--------------+--------------+
+| DualH [19]             | FG 2024      | 26.1         | 25           | 23.1         | 21.1         | 18           | 22.6         |
++------------------------+--------------+--------------+--------------+--------------+--------------+--------------+--------------+
+| TE-TAD [29]            | CVPR 2024    | 26.3         | 25.2         | 23.2         | 21           | 18.2         | 22.8         |
++------------------------+--------------+--------------+--------------+--------------+--------------+--------------+--------------+
+| GDD-TAD [27]           | KBS 2024     | 27.6         | 27.1         | 24.1         | 21           | 17           | 23.3         |
++------------------------+--------------+--------------+--------------+--------------+--------------+--------------+--------------+
+| BRTAL [30]             | T-CSVT 2025  | 27           | 25.7         | 23.7         | 21.5         | 18.2         | 23.2         |
++------------------------+--------------+--------------+--------------+--------------+--------------+--------------+--------------+
+| SAEFormer (Ours)       | -            | 27.7         | 26.5         | 24.4         | 21.8         | 18.2         | 23.7         |
++------------------------+--------------+--------------+--------------+--------------+--------------+--------------+--------------+
+
+Ablation Study
+
+We conduct ablation studies on THUMOS14 to examine the contributions of
+the proposed components. Since the main manuscript focuses on the
+primary effectiveness of LMSF and BAE, we report the main component
+analysis under I3D features in Table 4. Additional ablations, including
+the VideoMAE V2 setting, internal variants of LMSF and BAE, and the
+transfer of BAE to ActionFormer, are provided in the supplementary
+material. Specifically, Tables S1-S4 report additional component and
+variant analyses, Table S5 provides diagnostic error analysis, Table S6
+reports model complexity, and Figs. S1-S3 provide qualitative
+localization and visualization analyses.
+
+As shown in Table 4, LMSF improves the average mAP from 67.89 to 69.16,
+and BAE alone improves it to 69.18. The full model further improves the
+average mAP to 69.70, achieving the best average performance among the
+listed variants. These results suggest that LMSF and BAE provide
+complementary effects in average localization performance. However, the
+improvements are not monotonically additive at every tIoU threshold. For
+example, LMSF alone obtains a slightly higher mAP at tIoU 0.5, while BAE
+alone obtains a higher mAP at tIoU 0.7. Therefore, we interpret the two
+components as complementary in terms of average localization performance
+rather than consistently superior at every individual threshold.
+
+Table 4.
+
+Main component analysis on THUMOS14 using I3D features. The best results
+are highlighted in bold.
+
+  --------------------------------------------------------------------------
+  Variant   LMSF      BAE    0.3     0.4     0.5     0.6     0.7     Avg
+  --------- --------- ------ ------- ------- ------- ------- ------- -------
+  (A)       ✗         ✗      81.89   78.61   72.34   60.60   46.03   67.89
+
+  (B)       ✓         ✗      83.57   80.10   73.53   61.74   46.84   69.16
+
+  (C)       ✗         ✓      83.09   79.08   72.57   62.50   48.64   69.18
+
+  (D)       ✓         ✓      83.80   80.50   73.40   62.70   48.10   69.70
+  --------------------------------------------------------------------------
+
+Note: (A) denotes the baseline without LMSF or BAE; (B) adds LMSF only;
+(C) adds BAE only; and (D) denotes the full SAEFormer configuration with
+both LMSF and BAE enabled.
+
+Conclusion
+
+We propose SAEFormer, a semantic-aware representation enhancement
+framework for temporal action localization. Instead of redesigning the
+detection pipeline, SAEFormer strengthens temporal representations
+through LMSF and BAE. LMSF preserves local discriminative cues during
+stacked temporal attention, while BAE provides boundary-oriented
+residual reweighting without explicit boundary-level supervision.
+
+The experiments show that SAEFormer is most effective in
+boundary-sensitive, multi-category action localization scenarios, where
+temporal transitions, action-background discrimination, and
+category-discriminative cues are important. Its gains are more limited
+in class-agnostic proposal-oriented localization and in object-centric
+noun localization, where performance depends more on long-range proposal
+quality, object appearance, and hand-object interactions. These results
+indicate that local temporal and boundary cue enhancement is useful but
+not sufficient for all TAL settings. Future work will explore adaptive
+cue weighting, object-aware representations, and more detailed boundary
+response analysis.
+
+Data Availability
+
+Data will be made available on request.
+
+Declaration of Generative AI and AI-Assisted Technologies in the Writing Process
+
+During the preparation of this work, we used AI-assisted tools for
+grammar checking, language polishing, manuscript organization, and
+experimental result data organization. The study design, scientific
+content, experimental results, figures, tables, and analyses were
+completed and verified by the authors. We did not use AI-assisted tools
+to generate, fabricate, or alter research data, nor did we use
+generative AI to create, modify, or enhance images or figures in the
+submitted manuscript. After using these tools, we reviewed and edited
+the relevant content and take full responsibility for the content of the
+paper.
+
+References
+
+1.  F.C. Heilbron, V. Escorcia, B. Ghanem, J.C. Niebles, ActivityNet: A
+    large-scale video benchmark for human activity understanding, in:
+    2015 IEEE Conference on Computer Vision and Pattern Recognition
+    (CVPR), IEEE, 2015: pp. 961-970.
+    https://doi.org/10.1109/CVPR.2015.7298698.
+
+2.  Z. Liu, Y. Liu, Bridge the Gap: From Weak to Full Supervision for
+    Temporal Action Localization with PseudoFormer, arXiv preprint
+    arXiv:2504.14860, 2025. https://doi.org/10.48550/arXiv.2504.14860.
+
+3.  J. Xu, G. Chen, J. Lu, J. Zhou, Unintentional Action Localization
+    via Counterfactual Examples, IEEE Trans. Image Process. 31 (2022)
+    3281-3294. https://doi.org/10.1109/TIP.2022.3166278.
+
+4.  J. Xu, Y. Rao, X. Yu, G. Chen, J. Zhou, J. Lu, FineDiving: A
+    Fine-grained Dataset for Procedure-aware Action Quality Assessment,
+    in: 2022 IEEE/CVF Conference on Computer Vision and Pattern
+    Recognition (CVPR), IEEE, 2022: pp. 2939-2948.
+    https://doi.org/10.1109/CVPR52688.2022.00296.
+
+5.  E. Vahdani, Y. Tian, Deep Learning-Based Action Detection in
+    Untrimmed Videos: A Survey, IEEE Transactions on Pattern Analysis
+    and Machine Intelligence 45 (2023) 4302–4320.
+    https://doi.org/10.1109/TPAMI.2022.3193611.
+
+6.  R. Zeng, X. Chen, J. Liang, H. Wu, G. Cao, Y. Guo, Benchmarking the
+    Robustness of Temporal Action Detection Models Against Temporal
+    Corruptions, in: 2024 IEEE/CVF Conference on Computer Vision and
+    Pattern Recognition (CVPR), IEEE, 2024: pp. 18263-18274.
+    https://doi.org/10.1109/CVPR52733.2024.01729.
+
+7.  Y. Zhao, Y. Xiong, L. Wang, Z. Wu, X. Tang, D. Lin, Temporal Action
+    Detection with Structured Segment Networks, in: 2017 IEEE
+    International Conference on Computer Vision (ICCV), IEEE, 2017: pp.
+    2933-2942. https://doi.org/10.1109/ICCV.2017.317.
+
+8.  C. Lin, C. Xu, D. Luo, Y. Wang, Y. Tai, C. Wang, J. Li, F. Huang, Y.
+    Fu, Learning Salient Boundary Feature for Anchor-free Temporal
+    Action Localization, in: 2021 IEEE/CVF Conference on Computer Vision
+    and Pattern Recognition (CVPR), IEEE, 2021: pp. 3319-3328.
+    https://doi.org/10.1109/CVPR46437.2021.00333.
+
+9.  R. Zeng, W. Huang, M. Tan, Y. Rong, P. Zhao, J. Huang, C. Gan, Graph
+    Convolutional Module for Temporal Action Localization in Videos,
+    IEEE Trans. Pattern Anal. Mach. Intell. 44 (2022) 6209-6223.
+    https://doi.org/10.1109/TPAMI.2021.3090167.
+
+10. C. Zhang, J. Wu, Y. Li, ActionFormer: Localizing Moments of Actions
+    with Transformers, in: S. Avidan, G. Brostow, M. Cisse, G.M.
+    Farinella, T. Hassner (Eds.), Computer Vision - ECCV 2022, Springer
+    Nature Switzerland, Cham, 2022: pp. 492-510.
+    https://doi.org/10.1007/978-3-031-19772-7_29.
+
+11. Q. Li, G. Zu, H. Xu, J. Kong, Y. Zhang, J. Wang, An Adaptive Dual
+    Selective Transformer for Temporal Action Localization, IEEE Trans.
+    Multimed. 26 (2024) 7398-7412.
+    https://doi.org/10.1109/TMM.2024.3367599.
+
+12. C. Gong, D. Wang, M. Li, V. Chandra, Q. Liu, Vision Transformers
+    with Patch Diversification, arXiv preprint arXiv:2104.12753, 2021.
+    https://doi.org/10.48550/arXiv.2104.12753.
+
+13. P. Wang, W. Zheng, T. Chen, Z. Wang, Anti-Oversmoothing in Deep
+    Vision Transformers via the Fourier Domain Analysis: From Theory to
+    Practice, arXiv preprint arXiv:2203.05962, 2022.
+    https://doi.org/10.48550/arXiv.2203.05962.
+
+14. B. Wang, Y. Zhao, L. Yang, T. Long, X. Li, Temporal Action
+    Localization in the Deep Learning Era: A Survey, IEEE Trans. Pattern
+    Anal. Mach. Intell. 46 (2024) 2171-2190.
+    https://doi.org/10.1109/TPAMI.2023.3330794.
+
+15. T. Lin, X. Liu, X. Li, E. Ding, S. Wen, BMN: Boundary-Matching
+    Network for Temporal Action Proposal Generation, in: 2019 IEEE/CVF
+    International Conference on Computer Vision (ICCV), IEEE, 2019: pp.
+    3888-3897. https://doi.org/10.1109/ICCV.2019.00399.
+
+16. M. Xu, C. Zhao, D.S. Rojas, A. Thabet, B. Ghanem, G-TAD: Sub-Graph
+    Localization for Temporal Action Detection, in: 2020 IEEE/CVF
+    Conference on Computer Vision and Pattern Recognition (CVPR), IEEE,
+    2020: pp. 10153-10162. https://doi.org/10.1109/CVPR42600.2020.01017.
+
+17. Z. Qing, H. Su, W. Gan, D. Wang, W. Wu, X. Wang, Y. Qiao, J. Yan, C.
+    Gao, N. Sang, Temporal Context Aggregation Network for Temporal
+    Action Proposal Refinement, in: 2021 IEEE/CVF Conference on Computer
+    Vision and Pattern Recognition (CVPR), IEEE, 2021: pp. 485-494.
+    https://doi.org/10.1109/CVPR46437.2021.00055.
+
+18. Z. Zhu, W. Tang, L. Wang, N. Zheng, G. Hua, Enriching Local and
+    Global Contexts for Temporal Action Localization, in: 2021 IEEE/CVF
+    International Conference on Computer Vision (ICCV), IEEE, 2021: pp.
+    13496-13505. https://doi.org/10.1109/ICCV48922.2021.01326.
+
+19. Z. Zhang, C. Palmero, S. Escalera, DualH: A Dual Hierarchical Model
+    for Temporal Action Localization, in: 2024 IEEE 18th International
+    Conference on Automatic Face and Gesture Recognition (FG), IEEE,
+    2024: pp. 1-10. https://doi.org/10.1109/FG59268.2024.10581917.
+
+20. L. Yang, Z. Zheng, Y. Han, H. Cheng, S. Song, G. Huang, F. Li,
+    DyFADet: Dynamic Feature Aggregation for Temporal Action Detection,
+    in: A. Leonardis, E. Ricci, S. Roth, O. Russakovsky, T. Sattler, G.
+    Varol (Eds.), Computer Vision - ECCV 2024, Springer Nature
+    Switzerland, Cham, 2025: pp. 305-322.
+    https://doi.org/10.1007/978-3-031-72952-2_18.
+
+21. J. Tan, J. Tang, L. Wang, G. Wu, Relaxed Transformer Decoders for
+    Direct Action Proposal Generation, in: 2021 IEEE/CVF International
+    Conference on Computer Vision (ICCV), IEEE, 2021: pp. 13506-13515.
+    https://doi.org/10.1109/ICCV48922.2021.01327.
+
+22. F. Cheng, G. Bertasius, TallFormer: Temporal Action Localization
+    with a Long-Memory Transformer, in: S. Avidan, G. Brostow, M. Cisse,
+    G.M. Farinella, T. Hassner (Eds.), Computer Vision - ECCV 2022,
+    Springer Nature Switzerland, Cham, 2022: pp. 503-521.
+    https://doi.org/10.1007/978-3-031-19830-4_29.
+
+23. A. Vaswani, N. Shazeer, N. Parmar, J. Uszkoreit, L. Jones, A.N.
+    Gomez, L. Kaiser, I. Polosukhin, Attention Is All You Need, Adv.
+    Neural Inf. Process. Syst. 30 (2017).
+
+24. D. Shi, Y. Zhong, Q. Cao, L. Ma, J. Li, D. Tao, TriDet: Temporal
+    Action Detection with Relative Boundary Modeling, in: 2023 IEEE/CVF
+    Conference on Computer Vision and Pattern Recognition (CVPR), IEEE,
+    2023: pp. 18857-18866. https://doi.org/10.1109/CVPR52729.2023.01808.
+
+25. T.N. Tang, K. Kim, K. Sohn, TemporalMaxer: Maximize Temporal Context
+    with only Max Pooling for Temporal Action Localization, arXiv
+    preprint arXiv:2303.09055, 2023.
+    https://doi.org/10.48550/arXiv.2303.09055.
+
+26. D. Cui, C. Xin, L. Wu, X. Wang, ConvTransformer Attention Network
+    for temporal action detection, Knowl.-Based Syst. 300 (2024) 112264.
+    https://doi.org/10.1016/j.knosys.2024.112264.
+
+27. S. Zhang, B. Luo, H. Wang, Y. Gu, J. He, Temporal action detection
+    in videos with generative denoising diffusion, Knowl.-Based Syst.
+    296 (2024) 111767. https://doi.org/10.1016/j.knosys.2024.111767.
+
+28. J. Shao, X. Wang, R. Quan, J. Zheng, J. Yang, Y. Yang, Action
+    Sensitivity Learning for Temporal Action Localization, in: 2023
+    IEEE/CVF International Conference on Computer Vision (ICCV), IEEE,
+    2023: pp. 13457-13469. https://doi.org/10.1109/ICCV51070.2023.01238.
+
+29. H.-J. Kim, J.-H. Hong, H. Kong, S.-W. Lee, TE-TAD: Towards Full
+    End-to-End Temporal Action Detection via Time-Aligned Coordinate
+    Expression, in: 2024 IEEE/CVF Conference on Computer Vision and
+    Pattern Recognition (CVPR), IEEE, 2024: pp. 18837-18846.
+    https://doi.org/10.1109/CVPR52733.2024.01782.
+
+30. H. Liu, X. Li, B. Fan, J. Xu, BRTAL: Boundary Refinement Temporal
+    Action Localization via Offset-Driven Diffusion Models, IEEE Trans.
+    Circuits Syst. Video Technol. 35 (2025) 8174-8186.
+    https://doi.org/10.1109/TCSVT.2025.3548515.
+
+31. H. Wan, M. Luo, Z. Li, Y. Wang, TeST: Temporal-spatial separated
+    transformer for temporal action localization, Neurocomputing
+    614 (2025) 128688. https://doi.org/10.1016/j.neucom.2024.128688.
+
+32. H.-J. Kim, Y. Lee, J.-H. Hong, S.-W. Lee, DiGIT: Multi-Dilated Gated
+    Encoder and Central-Adjacent Region Integrated Decoder for Temporal
+    Action Detection Transformer, in: 2025 IEEE/CVF Conference on
+    Computer Vision and Pattern Recognition (CVPR), IEEE, 2025: pp.
+    24286-24296. https://doi.org/10.1109/CVPR52734.2025.02262.
+
+33. J. Yang, P. Wei, N. Zheng, Cross Time-Frequency Transformer for
+    Temporal Action Localization, IEEE Trans. Circuits Syst. Video
+    Technol. 34 (2024) 4625-4638.
+    https://doi.org/10.1109/TCSVT.2023.3326692.
+
+34. S. Liu, C.-L. Zhang, C. Zhao, B. Ghanem, End-to-End Temporal Action
+    Detection with 1B Parameters Across 1000 Frames, in: 2024 IEEE/CVF
+    Conference on Computer Vision and Pattern Recognition (CVPR), IEEE,
+    2024: pp. 18591-18601. https://doi.org/10.1109/CVPR52733.2024.01759.
+
+35. Y. Zhu, G. Zhang, J. Tan, G. Wu, L. Wang, Dual DETRs for Multi-Label
+    Temporal Action Detection, in: 2024 IEEE/CVF Conference on Computer
+    Vision and Pattern Recognition (CVPR), IEEE, 2024: pp. 18559-18569.
+    https://doi.org/10.1109/CVPR52733.2024.01756.
+
+36. P. Wang, S. Lu, C. Dai, S. Dai, B. Guo, Temporal action localization
+    with State-Sensitive Mamba and centroid sequences enhancement,
+    Neurocomputing 620 (2025) 129246.
+    https://doi.org/10.1016/j.neucom.2024.129246.
+
+37. J. Carreira, A. Zisserman, Quo Vadis, Action Recognition? A New
+    Model and the Kinetics Dataset, in: 2017 IEEE Conference on Computer
+    Vision and Pattern Recognition (CVPR), IEEE, 2017: pp. 4724-4733.
+    https://doi.org/10.1109/CVPR.2017.502.
+
+38. C. Feichtenhofer, H. Fan, J. Malik, K. He, SlowFast Networks for
+    Video Recognition, in: 2019 IEEE/CVF International Conference on
+    Computer Vision (ICCV), IEEE, 2019: pp. 6201-6210.
+    https://doi.org/10.1109/ICCV.2019.00630.
+
+39. S. Woo, J. Park, J.-Y. Lee, I.S. Kweon, CBAM: Convolutional Block
+    Attention Module, in: V. Ferrari, M. Hebert, C. Sminchisescu, Y.
+    Weiss (Eds.), Computer Vision - ECCV 2018, Springer International
+    Publishing, Cham, 2018: pp. 3-19.
+    https://doi.org/10.1007/978-3-030-01234-2_1.
+
+40. H. Idrees, A.R. Zamir, Y.-G. Jiang, A. Gorban, I. Laptev, R.
+    Sukthankar, M. Shah, The THUMOS challenge on action recognition for
+    videos in the wild, Comput. Vis. Image Underst. 155 (2017) 1-23.
+    https://doi.org/10.1016/j.cviu.2016.10.018.
+
+41. D. Damen, H. Doughty, G.M. Farinella, A. Furnari, E. Kazakos, J.
+    Ma, D. Moltisanti, J. Munro, T. Perrett, W. Price, M. Wray,
+    Rescaling Egocentric Vision: Collection, Pipeline and Challenges for
+    EPIC-KITCHENS-100, Int. J. Comput. Vis. 130 (2022) 33-55.
+    https://doi.org/10.1007/s11263-021-01531-2.
+
+42. L. Wang, B. Huang, Z. Zhao, Z. Tong, Y. He, Y. Wang, Y. Wang, Y.
+    Qiao, VideoMAE V2: Scaling Video Masked Autoencoders with Dual
+    Masking, in: 2023 IEEE/CVF Conference on Computer Vision and Pattern
+    Recognition (CVPR), IEEE, 2023: pp. 14549-14560.
+    https://doi.org/10.1109/CVPR52729.2023.01398.
+
+43. H. Alwassel, S. Giancola, B. Ghanem, TSP: Temporally-Sensitive
+    Pretraining of Video Encoders for Localization Tasks, in: 2021
+    IEEE/CVF International Conference on Computer Vision Workshops
+    (ICCVW), IEEE, 2021: pp. 3173-3183.
+    https://doi.org/10.1109/ICCVW54120.2021.00356.
+
+44. I. Loshchilov, F. Hutter, SGDR: Stochastic Gradient Descent with
+    Warm Restarts, in: International Conference on Learning
+    Representations, 2017. https://doi.org/10.48550/arXiv.1608.03983.
+
+45. I. Loshchilov, F. Hutter, Decoupled Weight Decay Regularization, in:
+    International Conference on Learning Representations, 2019.
+    https://doi.org/10.48550/arXiv.1711.05101.
+
+46. W. Wu, T. Lu, J. Wang, P. Tang, F. Gao, Temporal Action Detection
+    with Frequency Attention Mechanism, in: 2024 7th International
+    Conference on Mechatronics, Robotics and Automation (ICMRA), IEEE,
+    2024: pp. 137-141. https://doi.org/10.1109/ICMRA62519.2024.10809079.
+
+47. Y. Tang, W. Wang, C. Zhang, J. Liu, Y. Zhao, Learnable Feature
+    Augmentation Framework for Temporal Action Localization, IEEE Trans.
+    Image Process. 33 (2024) 4002-4015.
+    https://doi.org/10.1109/TIP.2024.3413599.
