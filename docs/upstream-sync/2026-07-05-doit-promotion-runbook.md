@@ -54,7 +54,7 @@
 推荐在刷新链路中直接附加审计和证据报告：
 
 ```powershell
-.\scripts\sub2api-refresh-upstream.ps1 -CheckHttp -RunAudit -WriteReport
+.\scripts\sub2api-refresh-upstream.ps1 -CheckHttp -RunAudit -RunCustomizationCheck -WriteReport
 ```
 
 先运行预检：
@@ -78,7 +78,7 @@ workbench\upstream-sync\reports\sub2api-promotion-plan-latest.json
 若报告检查不是 `report matches current versions`，不要执行替换，先重新运行：
 
 ```powershell
-.\scripts\sub2api-refresh-upstream.ps1 -CheckHttp -RunAudit -WriteReport -RunPreflight
+.\scripts\sub2api-refresh-upstream.ps1 -CheckHttp -RunAudit -RunCustomizationCheck -WriteReport -RunPreflight
 ```
 
 ## 执行替换

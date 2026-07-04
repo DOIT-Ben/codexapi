@@ -10,6 +10,7 @@ param(
   [switch]$SkipFrontendBuild,
   [switch]$SkipBackendTest,
   [switch]$CheckHttp,
+  [switch]$RunCustomizationCheck,
   [switch]$RunPreflight,
   [switch]$RunAudit,
   [switch]$WriteReport,
@@ -144,6 +145,15 @@ if ($RunAudit) {
   )
   if (-not $CheckHttp) { $auditArgs += "-SkipHttp" }
   Invoke-Checked -FilePath "powershell" -Arguments $auditArgs
+}
+
+if ($RunCustomizationCheck) {
+  Invoke-Checked -FilePath "powershell" -Arguments @(
+    "-NoProfile", "-ExecutionPolicy", "Bypass",
+    "-File", (Join-Path $repoRoot "scripts\sub2api-customization-check.ps1"),
+    "-ManifestPath", $manifestFull,
+    "-StagingPath", $stagingPath
+  )
 }
 
 if ($WriteReport) {

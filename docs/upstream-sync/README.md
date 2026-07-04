@@ -30,7 +30,7 @@ Doit API 采用“官方 Sub2API 源码 + Doit 定制层”的吸收模式：
 刷新官方、套 Doit 定制、验证 staging、生成证据报告并运行 preflight：
 
 ```powershell
-.\scripts\sub2api-refresh-upstream.ps1 -CheckHttp -RunAudit -WriteReport -RunPreflight
+.\scripts\sub2api-refresh-upstream.ps1 -CheckHttp -RunAudit -RunCustomizationCheck -WriteReport -RunPreflight
 ```
 
 只做本地审计：

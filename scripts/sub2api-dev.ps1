@@ -72,7 +72,7 @@ switch ($Action) {
     Invoke-Script -ScriptName "sub2api-upstream-watch.ps1"
   }
   "refresh" {
-    $args = @("-RunAudit", "-WriteReport", "-RunPreflight")
+    $args = @("-RunAudit", "-RunCustomizationCheck", "-WriteReport", "-RunPreflight")
     if (-not $SkipHttp) { $args += "-CheckHttp" }
     if ($Fast) {
       $args += @("-SkipFrontendBuild", "-SkipBackendTest")
