@@ -331,6 +331,7 @@ $requiredAssets = @(
   "scripts\sub2api-customization-check.ps1",
   "scripts\sub2api-dev.ps1",
   "scripts\sub2api-local-audit.ps1",
+  "scripts\sub2api-next-action.ps1",
   "scripts\sub2api-promote-staging.ps1",
   "scripts\sub2api-promotion-preflight.ps1",
   "scripts\sub2api-push-preflight.ps1",

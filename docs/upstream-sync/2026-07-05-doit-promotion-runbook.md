@@ -97,6 +97,12 @@ cd ..\..
 .\scripts\sub2api-promote-staging.ps1 -Execute
 ```
 
+执行前可先查看下一步决策：
+
+```powershell
+.\scripts\sub2api-dev.ps1 next-action
+```
+
 `-Execute` 会再次检查升级吸收报告是否匹配当前 target/staging 版本和官方 commit；报告缺失或过期时会拒绝替换。
 
 只有在明确接受热覆盖风险时，才允许追加 `-AllowRunningTarget`。默认流程不要使用该参数。
