@@ -5,33 +5,33 @@ export default {
   theme: {
     extend: {
       colors: {
-        // Warm clay-orange brand palette.
+        // Doit brand palette: Claude-like warm paper neutrals with pine-green contrast.
         primary: {
-          50: '#fff7ed',
-          100: '#ffedd5',
-          200: '#fed7aa',
-          300: '#fdba74',
-          400: '#f59f5b',
-          500: '#e48556',
-          600: '#c96442',
-          700: '#a84d34',
-          800: '#843d2d',
-          900: '#6b3428',
-          950: '#3a1a12'
+          50: '#fbfaf6',
+          100: '#f3eee6',
+          200: '#e6dbcf',
+          300: '#d4c4b5',
+          400: '#bba28e',
+          500: '#9a7b66',
+          600: '#7a5e4d',
+          700: '#5d473b',
+          800: '#44342c',
+          900: '#30241f',
+          950: '#1d1714'
         },
-        // Neutral slate palette for supporting UI.
+        // Pine green contrast for actions and identity accents.
         accent: {
-          50: '#f8fafc',
-          100: '#f1f5f9',
-          200: '#e2e8f0',
-          300: '#cbd5e1',
-          400: '#94a3b8',
-          500: '#64748b',
-          600: '#475569',
-          700: '#334155',
-          800: '#1e293b',
-          900: '#0f172a',
-          950: '#020617'
+          50: '#eef8ef',
+          100: '#d7efda',
+          200: '#b2dfb9',
+          300: '#83c990',
+          400: '#55ad6e',
+          500: '#2f8f5b',
+          600: '#207548',
+          700: '#1b5d3c',
+          800: '#184a33',
+          900: '#153d2d',
+          950: '#0b231a'
         },
         dark: {
           50: '#f8fafc',
@@ -64,22 +64,22 @@ export default {
         mono: ['ui-monospace', 'SFMono-Regular', 'Menlo', 'Monaco', 'Consolas', 'monospace']
       },
       boxShadow: {
-        glass: '0 18px 50px rgba(94, 59, 35, 0.10)',
-        'glass-sm': '0 8px 24px rgba(94, 59, 35, 0.08)',
-        glow: '0 0 22px rgba(228, 133, 86, 0.28)',
-        'glow-lg': '0 0 44px rgba(228, 133, 86, 0.34)',
-        card: '0 1px 2px rgba(58, 51, 42, 0.05), 0 10px 30px rgba(106, 71, 45, 0.07)',
-        'card-hover': '0 16px 44px rgba(106, 71, 45, 0.12)',
-        'inner-glow': 'inset 0 1px 0 rgba(255, 250, 244, 0.72)'
+        glass: '0 18px 50px rgba(68, 52, 44, 0.07)',
+        'glass-sm': '0 8px 24px rgba(68, 52, 44, 0.055)',
+        glow: '0 0 22px rgba(154, 123, 102, 0.14)',
+        'glow-lg': '0 0 44px rgba(47, 143, 91, 0.24)',
+        card: '0 1px 2px rgba(40, 49, 38, 0.04), 0 10px 30px rgba(68, 52, 44, 0.055)',
+        'card-hover': '0 16px 44px rgba(68, 52, 44, 0.08)',
+        'inner-glow': 'inset 0 1px 0 rgba(253, 250, 244, 0.86)'
       },
       backgroundImage: {
         'gradient-radial': 'radial-gradient(var(--tw-gradient-stops))',
-        'gradient-primary': 'linear-gradient(135deg, #e48556 0%, #c96442 100%)',
-        'gradient-dark': 'linear-gradient(135deg, #2d241e 0%, #14100d 100%)',
+        'gradient-primary': 'linear-gradient(135deg, #9a7b66 0%, #2f8f5b 100%)',
+        'gradient-dark': 'linear-gradient(135deg, #251c16 0%, #14100d 100%)',
         'gradient-glass':
-          'linear-gradient(135deg, rgba(255,250,244,0.72) 0%, rgba(255,247,237,0.48) 100%)',
+          'linear-gradient(135deg, rgba(253,252,248,0.86) 0%, rgba(250,249,245,0.62) 100%)',
         'mesh-gradient':
-          'radial-gradient(at 24% 12%, rgba(228, 133, 86, 0.13) 0px, transparent 44%), radial-gradient(at 82% 4%, rgba(201, 100, 66, 0.10) 0px, transparent 42%), radial-gradient(at 5% 54%, rgba(253, 186, 116, 0.10) 0px, transparent 46%)'
+          'linear-gradient(120deg, rgba(230, 219, 207, 0.18), transparent 42%), linear-gradient(180deg, rgba(47, 143, 91, 0.035), transparent 38%), linear-gradient(rgba(93, 71, 59, 0.02) 1px, transparent 1px), linear-gradient(90deg, rgba(93, 71, 59, 0.018) 1px, transparent 1px)'
       },
       animation: {
         'fade-in': 'fadeIn 0.3s ease-out',
@@ -117,8 +117,8 @@ export default {
           '100%': { backgroundPosition: '200% 0' }
         },
         glow: {
-          '0%': { boxShadow: '0 0 20px rgba(228, 133, 86, 0.24)' },
-          '100%': { boxShadow: '0 0 30px rgba(228, 133, 86, 0.38)' }
+          '0%': { boxShadow: '0 0 20px rgba(154, 123, 102, 0.12)' },
+          '100%': { boxShadow: '0 0 30px rgba(47, 143, 91, 0.28)' }
         }
       },
       backdropBlur: {

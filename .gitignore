@@ -8,6 +8,7 @@
 **/.vite/
 **/__pycache__/
 **/.pytest_cache/
+.playwright-cli/
 
 .env
 .env.*
@@ -30,6 +31,9 @@ workbench/upstream-sync/sub2api-doit-*/
 workbench/upstream-sync/staging_data/
 workbench/upstream-sync/staging_postgres_data/
 workbench/upstream-sync/staging_redis_data/
+sub2api/deploy/staging_data/
+sub2api/deploy/staging_postgres_data/
+sub2api/deploy/staging_redis_data/
 
 # Local analysis/build artifacts
 graphify-out/

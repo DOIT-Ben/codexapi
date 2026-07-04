@@ -140,20 +140,32 @@ if ($snapshotCapture.exit_code -ne 0) {
 
 $snapshot = Get-Content -LiteralPath $snapshotFull -Raw | ConvertFrom-Json
 $checks = New-Object System.Collections.Generic.List[object]
+$targetVersion = [string]$snapshot.versions.target
+$stagingVersion = [string]$snapshot.versions.staging
+$lockVersion = [string]$snapshot.upstream_lock.version
+$promotionCompleted =
+  $snapshot.promotion_plan -and
+  [string]$snapshot.promotion_plan.status -eq "completed" -and
+  [string]$snapshot.promotion_plan.mode -eq "execute" -and
+  -not [string]::IsNullOrWhiteSpace($targetVersion) -and
+  $targetVersion -eq $stagingVersion -and
+  $targetVersion -eq $lockVersion
+$prePromotionReady = -not [string]::IsNullOrWhiteSpace($targetVersion) -and $targetVersion -ne $stagingVersion
+$versionStateOk = $prePromotionReady -or $promotionCompleted
 
 Add-GateCheck -Checks $checks -Name "local audit" -Ok ($SkipAudit -or $auditCapture.exit_code -eq 0) -Detail $(if ($SkipAudit) { "skipped" } else { "exit=$($auditCapture.exit_code)" })
 Add-GateCheck -Checks $checks -Name "customization check" -Ok ($SkipCustomizationCheck -or $customizationCapture.exit_code -eq 0) -Detail $(if ($SkipCustomizationCheck) { "skipped" } else { "exit=$($customizationCapture.exit_code)" })
 Add-GateCheck -Checks $checks -Name "git synced with origin" -Ok ($AllowUnsyncedGit -or [bool]$snapshot.git.synced_with_origin) -Detail "head=$($snapshot.git.head), origin=$($snapshot.git.origin_main)"
 Add-GateCheck -Checks $checks -Name "official upstream clean" -Ok ($snapshot.official.status -eq "clean") -Detail $snapshot.official.status
 Add-GateCheck -Checks $checks -Name "official remote delta" -Ok ($AllowUpstreamDelta -or $snapshot.official.remote_delta -eq "none" -or $snapshot.official.remote_delta -eq "unknown") -Detail $snapshot.official.remote_delta
-Add-GateCheck -Checks $checks -Name "target version detected" -Ok (-not [string]::IsNullOrWhiteSpace([string]$snapshot.versions.target)) -Detail ([string]$snapshot.versions.target)
-Add-GateCheck -Checks $checks -Name "staging version detected" -Ok (-not [string]::IsNullOrWhiteSpace([string]$snapshot.versions.staging)) -Detail ([string]$snapshot.versions.staging)
-Add-GateCheck -Checks $checks -Name "staging differs from target" -Ok ([string]$snapshot.versions.target -ne [string]$snapshot.versions.staging) -Detail "$($snapshot.versions.target) -> $($snapshot.versions.staging)"
+Add-GateCheck -Checks $checks -Name "target version detected" -Ok (-not [string]::IsNullOrWhiteSpace($targetVersion)) -Detail $targetVersion
+Add-GateCheck -Checks $checks -Name "staging version detected" -Ok (-not [string]::IsNullOrWhiteSpace($stagingVersion)) -Detail $stagingVersion
+Add-GateCheck -Checks $checks -Name "target/staging version state" -Ok $versionStateOk -Detail $(if ($promotionCompleted) { "promoted target=$targetVersion staging=$stagingVersion" } else { "$targetVersion -> $stagingVersion" })
 if (-not $SkipHttp) {
   Add-GateCheck -Checks $checks -Name "target health" -Ok ([bool]$snapshot.health.target.ok) -Detail "status=$($snapshot.health.target.status)"
   Add-GateCheck -Checks $checks -Name "staging health" -Ok ([bool]$snapshot.health.staging.ok) -Detail "status=$($snapshot.health.staging.status)"
 }
-Add-GateCheck -Checks $checks -Name "promotion preflight ready" -Ok ($snapshot.promotion_preflight.exit_code -eq 0 -and [string]$snapshot.promotion_preflight.result -eq "Preflight result: READY_FOR_EXPLICIT_PROMOTION_APPROVAL") -Detail ([string]$snapshot.promotion_preflight.result)
+Add-GateCheck -Checks $checks -Name "promotion state" -Ok ($promotionCompleted -or ($snapshot.promotion_preflight.exit_code -eq 0 -and [string]$snapshot.promotion_preflight.result -eq "Preflight result: READY_FOR_EXPLICIT_PROMOTION_APPROVAL")) -Detail $(if ($promotionCompleted) { "completed" } else { [string]$snapshot.promotion_preflight.result })
 
 $failed = @($checks | Where-Object { -not $_.ok })
 $result = if ($failed.Count -eq 0) { "PASS" } else { "FAIL" }

@@ -2,11 +2,18 @@ package geminicli
 
 import (
 	"encoding/hex"
+	"os"
 	"strings"
 	"sync"
 	"testing"
 	"time"
 )
+
+func TestMain(m *testing.M) {
+	_ = os.Setenv(GeminiCLIOAuthClientIDEnv, "test-builtin-client-id")
+	_ = os.Setenv(GeminiCLIOAuthClientSecretEnv, "test-builtin-client-secret")
+	os.Exit(m.Run())
+}
 
 // ---------------------------------------------------------------------------
 // SessionStore 测试
@@ -327,6 +334,7 @@ func TestHasRestrictedScope(t *testing.T) {
 // ---------------------------------------------------------------------------
 
 func TestBuildAuthorizationURL(t *testing.T) {
+	builtinClientID := os.Getenv(GeminiCLIOAuthClientIDEnv)
 	t.Setenv(GeminiCLIOAuthClientSecretEnv, "test-secret")
 
 	authURL, err := BuildAuthorizationURL(
@@ -344,7 +352,7 @@ func TestBuildAuthorizationURL(t *testing.T) {
 	// 检查返回的 URL 包含期望的参数
 	checks := []string{
 		"response_type=code",
-		"client_id=" + GeminiCLIOAuthClientID,
+		"client_id=" + builtinClientID,
 		"redirect_uri=",
 		"state=test-state",
 		"code_challenge=test-challenge",
@@ -408,22 +416,22 @@ func TestBuildAuthorizationURL_WithProjectID(t *testing.T) {
 	}
 }
 
-func TestBuildAuthorizationURL_UsesBuiltinSecretFallback(t *testing.T) {
+func TestBuildAuthorizationURL_RequiresBuiltinSecret(t *testing.T) {
 	t.Setenv(GeminiCLIOAuthClientSecretEnv, "")
 
-	authURL, err := BuildAuthorizationURL(
+	_, err := BuildAuthorizationURL(
 		OAuthConfig{},
 		"test-state",
 		"test-challenge",
-		"https://example.com/callback",
+		"http://localhost:8080/callback",
 		"",
 		"code_assist",
 	)
-	if err != nil {
-		t.Fatalf("BuildAuthorizationURL() 不应报错: %v", err)
+	if err == nil {
+		t.Fatal("缺少内置 client_secret 时应返回错误")
 	}
-	if !strings.Contains(authURL, "client_id="+GeminiCLIOAuthClientID) {
-		t.Errorf("应使用内置 Gemini CLI client_id，实际 URL: %s", authURL)
+	if !strings.Contains(err.Error(), GeminiCLIOAuthClientSecretEnv) {
+		t.Errorf("错误消息应包含环境变量名，实际: %v", err)
 	}
 }
 
@@ -432,6 +440,7 @@ func TestBuildAuthorizationURL_UsesBuiltinSecretFallback(t *testing.T) {
 // ---------------------------------------------------------------------------
 
 func TestEffectiveOAuthConfig_GoogleOne(t *testing.T) {
+	builtinClientID := os.Getenv(GeminiCLIOAuthClientIDEnv)
 	// 内置的 Gemini CLI client secret 不嵌入在此仓库中。
 	// 测试通过环境变量设置一个假的 secret 来模拟运维配置。
 	t.Setenv(GeminiCLIOAuthClientSecretEnv, "test-built-in-secret")
@@ -448,7 +457,7 @@ func TestEffectiveOAuthConfig_GoogleOne(t *testing.T) {
 			name:         "Google One 使用内置客户端（空配置）",
 			input:        OAuthConfig{},
 			oauthType:    "google_one",
-			wantClientID: GeminiCLIOAuthClientID,
+			wantClientID: builtinClientID,
 			wantScopes:   DefaultCodeAssistScopes,
 			wantErr:      false,
 		},
@@ -469,7 +478,7 @@ func TestEffectiveOAuthConfig_GoogleOne(t *testing.T) {
 				Scopes: "https://www.googleapis.com/auth/cloud-platform https://www.googleapis.com/auth/generative-language.retriever https://www.googleapis.com/auth/drive.readonly",
 			},
 			oauthType:    "google_one",
-			wantClientID: GeminiCLIOAuthClientID,
+			wantClientID: builtinClientID,
 			wantScopes:   "https://www.googleapis.com/auth/cloud-platform",
 			wantErr:      false,
 		},
@@ -479,7 +488,7 @@ func TestEffectiveOAuthConfig_GoogleOne(t *testing.T) {
 				Scopes: "https://www.googleapis.com/auth/generative-language.retriever https://www.googleapis.com/auth/drive.readonly",
 			},
 			oauthType:    "google_one",
-			wantClientID: GeminiCLIOAuthClientID,
+			wantClientID: builtinClientID,
 			wantScopes:   DefaultCodeAssistScopes,
 			wantErr:      false,
 		},
@@ -487,7 +496,7 @@ func TestEffectiveOAuthConfig_GoogleOne(t *testing.T) {
 			name:         "Code Assist 使用内置客户端",
 			input:        OAuthConfig{},
 			oauthType:    "code_assist",
-			wantClientID: GeminiCLIOAuthClientID,
+			wantClientID: builtinClientID,
 			wantScopes:   DefaultCodeAssistScopes,
 			wantErr:      false,
 		},
@@ -689,15 +698,12 @@ func TestEffectiveOAuthConfig_WhitespaceTriming(t *testing.T) {
 func TestEffectiveOAuthConfig_NoEnvSecret(t *testing.T) {
 	t.Setenv(GeminiCLIOAuthClientSecretEnv, "")
 
-	cfg, err := EffectiveOAuthConfig(OAuthConfig{}, "code_assist")
-	if err != nil {
-		t.Fatalf("不设置环境变量时应回退到内置 secret，实际报错: %v", err)
+	_, err := EffectiveOAuthConfig(OAuthConfig{}, "code_assist")
+	if err == nil {
+		t.Fatal("不设置环境变量时应返回缺少内置 secret 的错误")
 	}
-	if strings.TrimSpace(cfg.ClientSecret) == "" {
-		t.Error("ClientSecret 不应为空")
-	}
-	if cfg.ClientID != GeminiCLIOAuthClientID {
-		t.Errorf("ClientID 应回退为内置客户端 ID，实际: %q", cfg.ClientID)
+	if !strings.Contains(err.Error(), GeminiCLIOAuthClientSecretEnv) {
+		t.Errorf("错误消息应包含环境变量名，实际: %v", err)
 	}
 }
 

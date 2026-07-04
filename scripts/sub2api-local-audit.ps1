@@ -98,13 +98,58 @@ function Get-UpstreamLockValue {
   return ""
 }
 
+function Get-ProjectVersion {
+  param([Parameter(Mandatory = $true)][string]$ProjectPath)
+  $versionPath = Join-Path $ProjectPath "backend\cmd\server\VERSION"
+  if (-not (Test-Path -LiteralPath $versionPath -PathType Leaf)) {
+    return ""
+  }
+  return (Get-Content -LiteralPath $versionPath -Raw).Trim()
+}
+
+function Test-PromotedTargetState {
+  param(
+    [Parameter(Mandatory = $true)][string]$RepoRoot,
+    [Parameter(Mandatory = $true)][string]$ExpectedVersion
+  )
+  $promotionPlanPath = Join-Path $RepoRoot "workbench\upstream-sync\reports\sub2api-promotion-plan-latest.json"
+  if (-not (Test-Path -LiteralPath $promotionPlanPath -PathType Leaf)) {
+    return [pscustomobject]@{
+      Ok = $false
+      Detail = "promotion plan missing"
+    }
+  }
+
+  $promotionPlan = Get-Content -LiteralPath $promotionPlanPath -Raw | ConvertFrom-Json
+  $targetVersion = Get-ProjectVersion -ProjectPath (Join-Path $RepoRoot "sub2api")
+  $ok =
+    [string]$promotionPlan.status -eq "completed" -and
+    [string]$promotionPlan.mode -eq "execute" -and
+    -not [string]::IsNullOrWhiteSpace($ExpectedVersion) -and
+    $targetVersion -eq $ExpectedVersion
+
+  return [pscustomobject]@{
+    Ok = $ok
+    Detail = "target=$targetVersion, expected=$ExpectedVersion, promotion=$($promotionPlan.status)"
+  }
+}
+
 function Test-LocalDiffInventory {
-  param([Parameter(Mandatory = $true)][string]$InventoryPath)
+  param(
+    [Parameter(Mandatory = $true)][string]$InventoryPath,
+    [bool]$AllowPromotedTarget = $false
+  )
   $diffPaths = @(& git diff --name-only -- sub2api | Where-Object { -not [string]::IsNullOrWhiteSpace($_) })
   if ($LASTEXITCODE -ne 0) {
     return [pscustomobject]@{
       Ok = $false
       Detail = "git diff failed"
+    }
+  }
+  if ($AllowPromotedTarget) {
+    return [pscustomobject]@{
+      Ok = $true
+      Detail = "promoted target; $($diffPaths.Count) sub2api diff paths allowed before commit"
     }
   }
   if (-not (Test-Path -LiteralPath $InventoryPath -PathType Leaf)) {
@@ -137,6 +182,7 @@ function Test-LocalDiffInventory {
 }
 
 function Test-UntrackedAssetScope {
+  param([bool]$AllowPromotedTarget = $false)
   $statusLines = @(& git status --porcelain --untracked-files=all | Where-Object { $_.StartsWith("?? ") })
   if ($LASTEXITCODE -ne 0) {
     return [pscustomobject]@{
@@ -152,7 +198,8 @@ function Test-UntrackedAssetScope {
       $path -eq "AGENTS.md" -or
       $path.StartsWith("customizations\doit\", [System.StringComparison]::OrdinalIgnoreCase) -or
       $path.StartsWith("docs\upstream-sync\", [System.StringComparison]::OrdinalIgnoreCase) -or
-      ($path.StartsWith("scripts\", [System.StringComparison]::OrdinalIgnoreCase) -and (Split-Path -Leaf $path).StartsWith("sub2api-", [System.StringComparison]::OrdinalIgnoreCase))
+      ($path.StartsWith("scripts\", [System.StringComparison]::OrdinalIgnoreCase) -and (Split-Path -Leaf $path).StartsWith("sub2api-", [System.StringComparison]::OrdinalIgnoreCase)) -or
+      ($AllowPromotedTarget -and $path.StartsWith("sub2api\", [System.StringComparison]::OrdinalIgnoreCase))
 
     if (-not $isExpected) {
       $unexpected += $path
@@ -304,6 +351,7 @@ $lockCommit = Get-UpstreamLockValue -LockPath $lockPath -Name "upstream_commit"
 if ([string]::IsNullOrWhiteSpace($lockVersion)) {
   $lockVersion = "unknown"
 }
+$promotedTargetCheck = Test-PromotedTargetState -RepoRoot $repoRoot -ExpectedVersion $lockVersion
 
 Write-Host "Sub2API local audit"
 Write-Host "Repo: $repoRoot"
@@ -384,10 +432,10 @@ $ignoreOutput = (& git check-ignore -v @ignoredPaths 2>$null)
 Write-Check -Name "generated/local artifact paths are git-ignored" -Ok ($LASTEXITCODE -eq 0 -and $ignoreOutput.Count -eq $ignoredPaths.Count) -Detail "$($ignoreOutput.Count)/$($ignoredPaths.Count)"
 
 $inventoryPath = Join-Path $repoRoot "docs\upstream-sync\2026-07-05-doit-local-diff-inventory.md"
-$inventoryCheck = Test-LocalDiffInventory -InventoryPath $inventoryPath
+$inventoryCheck = Test-LocalDiffInventory -InventoryPath $inventoryPath -AllowPromotedTarget $promotedTargetCheck.Ok
 Write-Check -Name "local sub2api diffs are inventoried" -Ok $inventoryCheck.Ok -Detail $inventoryCheck.Detail
 
-$untrackedScopeCheck = Test-UntrackedAssetScope
+$untrackedScopeCheck = Test-UntrackedAssetScope -AllowPromotedTarget $promotedTargetCheck.Ok
 Write-Check -Name "visible untracked files are expected project assets" -Ok $untrackedScopeCheck.Ok -Detail $untrackedScopeCheck.Detail
 
 $officialCheck = Test-OfficialSourceState -OfficialPath (Join-Path $repoRoot "sub2api-official") -ExpectedRemote "https://github.com/Wei-Shaw/sub2api.git" -ExpectedCommit $lockCommit

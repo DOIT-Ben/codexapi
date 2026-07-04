@@ -295,7 +295,7 @@ Invoke-RobocopyChecked -Arguments @(
   $stagingFull,
   $targetFull,
   "/MIR",
-  "/XD", ".git", "node_modules", "dist", "data", "postgres_data", "redis_data", "backups", "caddy_data", "caddy_config",
+  "/XD", ".git", "node_modules", "dist", "data", "postgres_data", "redis_data", "backups", "caddy_data", "caddy_config", "staging_data", "staging_postgres_data", "staging_redis_data",
   "/XF", ".env", ".env.*", "config.yaml", "*.log", "*.tmp",
   "/NFL", "/NDL", "/NJH", "/NJS", "/NP"
 )

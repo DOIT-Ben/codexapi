@@ -75,6 +75,7 @@ if ($RefreshEvidence) {
 $watch = Read-JsonFile -Path $watchFull
 $gate = Read-JsonFile -Path $gateFull
 $promotionPlan = Read-JsonFile -Path $promotionPlanFull
+$promotionCompleted = $promotionPlan -and [string]$promotionPlan.status -eq "completed" -and [string]$promotionPlan.mode -eq "execute"
 
 $action = "COLLECT_EVIDENCE"
 $command = ".\scripts\sub2api-next-action.ps1 -RefreshEvidence"
@@ -84,6 +85,10 @@ if ($watch -and $watch.result -eq "UPDATE_AVAILABLE") {
   $action = "REFRESH_FROM_UPSTREAM"
   $command = ".\scripts\sub2api-dev.ps1 refresh"
   $reason = "official upstream has a newer commit"
+} elseif ($promotionCompleted -and $gate -and $gate.result -eq "PASS") {
+  $action = "PROMOTED_VERIFY_AND_COMMIT"
+  $command = ".\scripts\sub2api-dev.ps1 gate -CheckRemote"
+  $reason = "staging has been promoted; verify runtime and commit the promoted source update"
 } elseif ($gate -and $gate.result -ne "PASS") {
   $action = "FIX_RELEASE_GATE"
   $command = ".\scripts\sub2api-dev.ps1 gate -CheckRemote"

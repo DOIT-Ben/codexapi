@@ -668,6 +668,15 @@ func TestBuildAuthorizationURL_特殊字符编码(t *testing.T) {
 // ---------------------------------------------------------------------------
 
 func TestConstants_值正确(t *testing.T) {
+	oldClientID := ClientID
+	oldSecret := defaultClientSecret
+	ClientID = "test-client-id"
+	defaultClientSecret = "test-client-secret"
+	t.Cleanup(func() {
+		ClientID = oldClientID
+		defaultClientSecret = oldSecret
+	})
+
 	if AuthorizeURL != "https://accounts.google.com/o/oauth2/v2/auth" {
 		t.Errorf("AuthorizeURL 不匹配: got %s", AuthorizeURL)
 	}
@@ -677,23 +686,20 @@ func TestConstants_值正确(t *testing.T) {
 	if UserInfoURL != "https://www.googleapis.com/oauth2/v2/userinfo" {
 		t.Errorf("UserInfoURL 不匹配: got %s", UserInfoURL)
 	}
-	if ClientID != "antigravity-oauth-client-id" {
+	if ClientID != "test-client-id" {
 		t.Errorf("ClientID 不匹配: got %s", ClientID)
 	}
-	old := defaultClientSecret
-	defaultClientSecret = "test-client-secret"
-	t.Cleanup(func() { defaultClientSecret = old })
 	secret, err := getClientSecret()
 	if err != nil {
-		t.Fatalf("getClientSecret 应返回默认值，但报错: %v", err)
+		t.Fatalf("getClientSecret 应返回测试值，但报错: %v", err)
 	}
 	if secret != "test-client-secret" {
-		t.Errorf("默认 client_secret 不匹配: got %s", secret)
+		t.Errorf("defaultClientSecret 不匹配: got %s", secret)
 	}
-	if RedirectURI != "http://localhost:8085/callback" {
+	if RedirectURI != "http://localhost:8080" {
 		t.Errorf("RedirectURI 不匹配: got %s", RedirectURI)
 	}
-	if GetUserAgent() != "antigravity/1.23.2 windows/amd64" {
+	if GetUserAgent() != "Antigravity/1.23.2" {
 		t.Errorf("UserAgent 不匹配: got %s", GetUserAgent())
 	}
 	if SessionTTL != 30*time.Minute {

@@ -2,18 +2,18 @@
 
 ## 当前结论
 
-当前已完成官方 Sub2API `0.1.144` 到 Doit API staging 的吸收验证。旧项目仍保持不变，正式替换当前 `sub2api` 仍需要单独明确授权。
+当前已完成官方 Sub2API `0.1.144` 到 Doit API 的正式吸收。`sub2api` 目录已替换为 Doit 定制后的官方 `0.1.144`，旧运行数据、`.env` 和本地配置已保留。
 
 ## 当前版本
 
-- 当前旧项目：`sub2api`，版本 `0.1.130`
+- 当前项目：`sub2api`，版本 `0.1.144`
 - 新版 staging：`workbench\upstream-sync\sub2api-doit-0.1.144`，版本 `0.1.144`
 - 官方来源：`https://github.com/Wei-Shaw/sub2api`
 - 官方 commit：`b650bdd68d25bad3e502b2e34efe775555da2eba`
 
 ## 当前运行地址
 
-- 旧项目：`http://127.0.0.1:18082/`
+- 当前项目：`http://127.0.0.1:18082/`
 - 新版 staging：`http://127.0.0.1:18083/`
 
 ## 已落地资产
@@ -82,7 +82,7 @@ promotion 预检命令：
 Preflight result: READY_FOR_EXPLICIT_PROMOTION_APPROVAL
 ```
 
-含义：当前具备替换条件，但尚未执行替换。正式替换会停旧容器并替换当前 `sub2api` 源码目录，必须另行明确授权。
+历史含义：替换前用于确认 staging 具备正式 promotion 条件。当前 promotion 已执行，发布门禁已改为同时支持 promotion 前和 promotion 后状态。
 
 ## 安全边界
 
@@ -101,6 +101,9 @@ Preflight result: READY_FOR_EXPLICIT_PROMOTION_APPROVAL
 - `sub2api\backend\sub2api-new`
 - `workbench\*.png`
 - `workbench\image-test-*.json`
+- `sub2api\deploy\staging_data\`
+- `sub2api\deploy\staging_postgres_data\`
+- `sub2api\deploy\staging_redis_data\`
 
 staging 容器状态入口：
 
@@ -202,4 +205,4 @@ staging 容器状态入口：
 - 本地审计已扩展可见未跟踪文件范围门禁，验证通过：`visible untracked files are expected project assets - 28 untracked assets in expected roots`。
 - 本地审计已扩展官方副本来源门禁，验证通过：`official upstream clone is clean and locked - clean official clone at b650bdd68d25bad3e502b2e34efe775555da2eba`。
 - `scripts\sub2api-*.ps1` 中不再硬编码 `sub2api-doit-0.1.144`、`0.1.144-staging` 或固定 `ExpectedVersion = "0.1.144"`。
-- 当前正式替换仍未执行，`sub2api` 目录保持旧项目状态。
+- 当前正式替换已执行，`sub2api` 目录已是 `0.1.144`。`scripts\sub2api-release-gate.ps1`、`scripts\sub2api-next-action.ps1` 和 `scripts\sub2api-local-audit.ps1` 已补充 post-promotion 状态识别。

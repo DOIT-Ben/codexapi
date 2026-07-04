@@ -1,5 +1,5 @@
 <template>
-  <div class="min-h-screen bg-[#f7f2ea] text-[#3a332a] dark:bg-[#100d0b] dark:text-gray-100">
+  <div class="min-h-screen bg-[#faf9f5] text-[#263126] dark:bg-[#10120d] dark:text-gray-100">
     <!-- Background Decoration -->
     <div class="pointer-events-none fixed inset-0 bg-mesh-gradient"></div>
 
