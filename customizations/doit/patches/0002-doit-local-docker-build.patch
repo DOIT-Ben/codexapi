@@ -1,0 +1,26 @@
+diff --git a/deploy/Dockerfile b/deploy/Dockerfile
+index a947158..3c4ab9e 100644
+--- a/deploy/Dockerfile
++++ b/deploy/Dockerfile
+@@ -20,7 +20,7 @@ FROM ${NODE_IMAGE} AS frontend-builder
+ WORKDIR /app/frontend
+ 
+ # Install pnpm
+-RUN corepack enable && corepack prepare pnpm@latest --activate
++RUN corepack enable && corepack prepare pnpm@10.30.2 --activate
+ 
+ # Install dependencies first (better caching)
+ COPY frontend/package.json frontend/pnpm-lock.yaml ./
+diff --git a/deploy/docker-compose.local.yml b/deploy/docker-compose.local.yml
+index ca91511..c01263e 100644
+--- a/deploy/docker-compose.local.yml
++++ b/deploy/docker-compose.local.yml
+@@ -24,7 +24,7 @@ services:
+   # Sub2API Application
+   # ===========================================================================
+   sub2api:
+-    image: weishaw/sub2api:latest
++    image: sub2api-doit:local
+     container_name: sub2api
+     restart: unless-stopped
+     ulimits:

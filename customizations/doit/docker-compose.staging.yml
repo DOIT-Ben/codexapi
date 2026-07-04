@@ -1,0 +1,18 @@
+services:
+  sub2api:
+    image: sub2api-doit:0.1.144-staging
+    container_name: sub2api-doit-staging
+    ports:
+      - "127.0.0.1:18083:8080"
+    volumes:
+      - ./staging_data:/app/data:Z
+
+  postgres:
+    container_name: sub2api-doit-staging-postgres
+    volumes:
+      - ./staging_postgres_data:/var/lib/postgresql/data:Z
+
+  redis:
+    container_name: sub2api-doit-staging-redis
+    volumes:
+      - ./staging_redis_data:/data:Z

@@ -1,0 +1,8 @@
+upstream_repo=https://github.com/Wei-Shaw/sub2api.git
+upstream_ref=main
+upstream_commit=b650bdd68d25bad3e502b2e34efe775555da2eba
+upstream_version=0.1.144
+generated_at=2026-07-05
+active_overlay=apply-doit-overlay.ps1
+active_patches=0002-doit-local-docker-build.patch
+retired_patches=0001-legacy-codex-import-shared-account.patch,0002-old-version-branding-theme-diff.patch

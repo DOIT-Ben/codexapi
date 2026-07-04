@@ -1,0 +1,59 @@
+# Doit API Upstream Sync
+
+## 当前结论
+
+Doit API 采用“官方 Sub2API 源码 + Doit 定制层”的吸收模式：
+
+- 官方源码副本：`sub2api-official`
+- 当前旧项目：`sub2api`
+- Doit 定制层：`customizations\doit`
+- 生成 staging：`workbench\upstream-sync\sub2api-doit-<version>`
+
+正式替换 `sub2api` 之前，必须先完成刷新、验证、审计、证据报告和 promotion preflight。替换本身仍需要单独明确授权。
+
+## 推荐命令
+
+刷新官方、套 Doit 定制、验证 staging、生成证据报告并运行 preflight：
+
+```powershell
+.\scripts\sub2api-refresh-upstream.ps1 -CheckHttp -RunAudit -WriteReport -RunPreflight
+```
+
+只做本地审计：
+
+```powershell
+.\scripts\sub2api-local-audit.ps1
+```
+
+只做 promotion dry-run：
+
+```powershell
+.\scripts\sub2api-promote-staging.ps1
+```
+
+## 正式替换边界
+
+不要直接执行正式替换，除非用户明确授权。
+
+正式替换命令是：
+
+```powershell
+.\scripts\sub2api-promote-staging.ps1 -Execute
+```
+
+该命令会再次检查升级吸收报告是否匹配当前 target/staging 版本和官方 commit。报告缺失或过期时会拒绝替换。
+
+## 文档索引
+
+- `2026-07-05-doit-upstream-sync-design.md`：方案设计和取舍。
+- `2026-07-05-doit-upstream-sync-implementation-plan.md`：落地计划。
+- `2026-07-05-doit-upstream-sync-status.md`：当前状态、验证证据和运行地址。
+- `2026-07-05-doit-promotion-runbook.md`：正式替换和回退步骤。
+- `2026-07-05-doit-local-diff-inventory.md`：旧 `sub2api` 本地差异归档。
+
+## 定制层索引
+
+- `customizations\doit\README.md`：Doit overlay、active patch、retired patch 和更新流程。
+- `customizations\doit\overlays\`：品牌、主题和布局覆盖文件。
+- `customizations\doit\patches\`：仍自动应用的 patch。
+- `customizations\doit\retired\`：历史 patch，只作证据，不自动应用。

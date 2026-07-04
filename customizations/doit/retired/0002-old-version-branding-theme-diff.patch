@@ -1,0 +1,723 @@
+diff --git a/frontend/src/components/layout/AppLayout.vue b/frontend/src/components/layout/AppLayout.vue
+index 5e13233..b3077bf 100644
+--- a/frontend/src/components/layout/AppLayout.vue
++++ b/frontend/src/components/layout/AppLayout.vue
+@@ -1,5 +1,5 @@
+ <template>
+-  <div class="min-h-screen bg-[#f7f2ea] text-[#3a332a] dark:bg-[#100d0b] dark:text-gray-100">
++  <div class="min-h-screen bg-[#faf9f5] text-[#263126] dark:bg-[#10120d] dark:text-gray-100">
+     <!-- Background Decoration -->
+     <div class="pointer-events-none fixed inset-0 bg-mesh-gradient"></div>
+ 
+diff --git a/frontend/src/components/layout/AuthLayout.vue b/frontend/src/components/layout/AuthLayout.vue
+index f1ff775..fdbcc3e 100644
+--- a/frontend/src/components/layout/AuthLayout.vue
++++ b/frontend/src/components/layout/AuthLayout.vue
+@@ -1,14 +1,14 @@
+ <template>
+-  <div class="relative flex min-h-screen items-center justify-center overflow-hidden bg-[#f7f2ea] p-4 text-[#3a332a] dark:bg-[#100d0b] dark:text-gray-100">
++  <div class="relative flex min-h-screen items-center justify-center overflow-hidden bg-[#faf9f5] p-4 text-[#263126] dark:bg-[#10120d] dark:text-gray-100">
+     <div
+-      class="absolute inset-0 bg-[linear-gradient(135deg,#fffaf4_0%,#f7f2ea_46%,#f1dfcb_100%)] dark:bg-[linear-gradient(135deg,#1b1410_0%,#100d0b_56%,#241711_100%)]"
++      class="absolute inset-0 bg-[linear-gradient(135deg,#fffdf8_0%,#faf9f5_54%,#eee6dc_100%)] dark:bg-[linear-gradient(135deg,#191b12_0%,#10120d_56%,#1e2417_100%)]"
+     ></div>
+ 
+     <div class="pointer-events-none absolute inset-0 overflow-hidden">
+       <div class="absolute inset-x-0 top-0 h-48 bg-gradient-to-b from-primary-100/70 to-transparent dark:from-primary-950/25"></div>
+-      <div class="absolute inset-y-0 right-0 w-1/3 bg-gradient-to-l from-primary-100/35 to-transparent dark:from-primary-950/20"></div>
++      <div class="absolute inset-y-0 right-0 w-1/3 bg-gradient-to-l from-accent-100/35 to-transparent dark:from-accent-950/20"></div>
+       <div
+-        class="absolute inset-0 bg-[linear-gradient(rgba(228,133,86,0.045)_1px,transparent_1px),linear-gradient(90deg,rgba(228,133,86,0.045)_1px,transparent_1px)] bg-[size:64px_64px] dark:bg-[linear-gradient(rgba(228,133,86,0.06)_1px,transparent_1px),linear-gradient(90deg,rgba(228,133,86,0.06)_1px,transparent_1px)]"
++        class="absolute inset-0 bg-[linear-gradient(rgba(124,84,11,0.045)_1px,transparent_1px),linear-gradient(90deg,rgba(124,84,11,0.04)_1px,transparent_1px)] bg-[size:64px_64px] dark:bg-[linear-gradient(rgba(217,154,20,0.055)_1px,transparent_1px),linear-gradient(90deg,rgba(47,143,91,0.05)_1px,transparent_1px)]"
+       ></div>
+     </div>
+ 
+@@ -16,20 +16,20 @@
+       <div class="mb-8 text-center">
+         <template v-if="settingsLoaded">
+           <div
+-            class="mb-4 inline-flex h-16 w-16 items-center justify-center overflow-hidden rounded-2xl bg-[#fffaf4] shadow-lg shadow-primary-600/20 ring-1 ring-primary-200/80 dark:bg-dark-800 dark:ring-primary-900/60"
++            class="mb-4 inline-flex h-16 w-16 items-center justify-center overflow-hidden rounded-2xl bg-[#fffdf4] shadow-lg shadow-primary-600/20 ring-1 ring-primary-200/80 dark:bg-dark-800 dark:ring-primary-900/60"
+           >
+             <img :src="siteLogo || '/logo.png'" alt="Logo" class="h-full w-full object-contain" />
+           </div>
+           <h1 class="text-gradient mb-2 text-3xl font-bold">
+             {{ siteName }}
+           </h1>
+-          <p class="text-sm text-[#8a8174] dark:text-dark-400">
++          <p class="text-sm text-[#7b765e] dark:text-dark-400">
+             {{ siteSubtitle }}
+           </p>
+         </template>
+       </div>
+ 
+-      <div class="card-glass rounded-2xl border border-[#eadfce]/80 p-8 shadow-glass dark:border-[#3b2a22]/80">
++      <div class="card-glass rounded-2xl border border-[#e7dccd]/80 p-8 shadow-glass dark:border-[#2f2619]/80">
+         <slot />
+       </div>
+ 
+@@ -37,7 +37,7 @@
+         <slot name="footer" />
+       </div>
+ 
+-      <div class="mt-8 text-center text-xs text-[#a69a8b] dark:text-dark-500">
++      <div class="mt-8 text-center text-xs text-[#8a805e] dark:text-dark-500">
+         &copy; {{ currentYear }} {{ siteName }}. All rights reserved.
+       </div>
+     </div>
+@@ -65,6 +65,6 @@ onMounted(() => {
+ 
+ <style scoped>
+ .text-gradient {
+-  @apply bg-gradient-to-r from-primary-600 to-primary-500 bg-clip-text text-transparent;
++  @apply bg-gradient-to-r from-accent-700 to-primary-500 bg-clip-text text-transparent;
+ }
+ </style>
+diff --git a/frontend/src/i18n/locales/en.ts b/frontend/src/i18n/locales/en.ts
+index 6e5dca5..213bfee 100644
+--- a/frontend/src/i18n/locales/en.ts
++++ b/frontend/src/i18n/locales/en.ts
+@@ -187,8 +187,8 @@ export default {
+ 
+   // Setup Wizard
+   setup: {
+-    title: 'Sub2API Setup',
+-    description: 'Configure your Sub2API instance',
++    title: 'Doit API Setup',
++    description: 'Configure your Doit API instance',
+     database: {
+       title: 'Database Configuration',
+       description: 'Connect to your PostgreSQL database',
+@@ -5574,7 +5574,7 @@ export default {
+         backendModeDescription:
+           'Disables user registration, public site, and self-service features. Only admin can log in and manage the platform.',
+         siteName: 'Site Name',
+-        siteNamePlaceholder: 'Sub2API',
++        siteNamePlaceholder: 'Doit API',
+         siteNameHint: 'Displayed in emails and page titles',
+         siteSubtitle: 'Site Subtitle',
+         siteSubtitlePlaceholder: 'Subscription to API Conversion Platform',
+@@ -5864,7 +5864,7 @@ export default {
+         fromEmail: 'From Email',
+         fromEmailPlaceholder: "noreply{'@'}example.com",
+         fromName: 'From Name',
+-        fromNamePlaceholder: 'Sub2API',
++        fromNamePlaceholder: 'Doit API',
+         useTls: 'Use TLS',
+         useTlsHint: 'Enable TLS encryption for SMTP connection'
+       },
+@@ -6503,14 +6503,14 @@ export default {
+     // Admin tour steps
+     admin: {
+       welcome: {
+-        title: '👋 Welcome to Sub2API',
+-        description: '<div style="line-height: 1.8;"><p style="margin-bottom: 16px;">Sub2API is a powerful AI service gateway platform that helps you easily manage and distribute AI services.</p><p style="margin-bottom: 12px;"><b>🎯 Core Features:</b></p><ul style="margin-left: 20px; margin-bottom: 16px;"><li>📦 <b>Group Management</b> - Create service tiers (VIP, Free Trial, etc.)</li><li>🔗 <b>Account Pool</b> - Connect multiple upstream AI service accounts</li><li>🔑 <b>Key Distribution</b> - Generate independent API Keys for users</li><li>💰 <b>Billing Control</b> - Flexible rate and quota management</li></ul><p style="color: #10b981; font-weight: 600;">Let\'s complete the initial setup in 3 minutes →</p></div>',
++        title: '👋 Welcome to Doit API',
++        description: '<div style="line-height: 1.8;"><p style="margin-bottom: 16px;">Doit API is your local AI service gateway for managing and distributing AI access.</p><p style="margin-bottom: 12px;"><b>🎯 Core Features:</b></p><ul style="margin-left: 20px; margin-bottom: 16px;"><li>📦 <b>Group Management</b> - Create service tiers (VIP, Free Trial, etc.)</li><li>🔗 <b>Account Pool</b> - Connect multiple upstream AI service accounts</li><li>🔑 <b>Key Distribution</b> - Generate independent API Keys for users</li><li>💰 <b>Billing Control</b> - Flexible rate and quota management</li></ul><p style="color: #2f8f5b; font-weight: 600;">Let\'s complete the initial setup in 3 minutes →</p></div>',
+         nextBtn: 'Start Setup 🚀',
+         prevBtn: 'Skip'
+       },
+       groupManage: {
+         title: '📦 Step 1: Group Management',
+-        description: '<div style="line-height: 1.7;"><p style="margin-bottom: 12px;"><b>What is a Group?</b></p><p style="margin-bottom: 12px;">Groups are the core concept of Sub2API, like a "service package":</p><ul style="margin-left: 20px; margin-bottom: 12px; font-size: 13px;"><li>🎯 Each group can contain multiple upstream accounts</li><li>💰 Each group has independent billing multiplier</li><li>👥 Can be set as public or exclusive</li></ul><p style="margin-top: 12px; padding: 8px 12px; background: #f0fdf4; border-left: 3px solid #10b981; border-radius: 4px; font-size: 13px;"><b>💡 Example:</b> You can create "VIP Premium" (high rate) and "Free Trial" (low rate) groups</p><p style="margin-top: 16px; color: #10b981; font-weight: 600;">👉 Click "Group Management" on the left sidebar</p></div>'
++        description: '<div style="line-height: 1.7;"><p style="margin-bottom: 12px;"><b>What is a Group?</b></p><p style="margin-bottom: 12px;">Groups are the core concept of Doit API, like a "service package":</p><ul style="margin-left: 20px; margin-bottom: 12px; font-size: 13px;"><li>🎯 Each group can contain multiple upstream accounts</li><li>💰 Each group has independent billing multiplier</li><li>👥 Can be set as public or exclusive</li></ul><p style="margin-top: 12px; padding: 8px 12px; background: #eef8ef; border-left: 3px solid #2f8f5b; border-radius: 4px; font-size: 13px;"><b>💡 Example:</b> You can create "VIP Premium" (high rate) and "Free Trial" (low rate) groups</p><p style="margin-top: 16px; color: #2f8f5b; font-weight: 600;">👉 Click "Group Management" on the left sidebar</p></div>'
+       },
+       createGroup: {
+         title: '➕ Create New Group',
+@@ -6603,8 +6603,8 @@ export default {
+     // User tour steps
+     user: {
+       welcome: {
+-        title: '👋 Welcome to Sub2API',
+-        description: '<div style="line-height: 1.8;"><p style="margin-bottom: 16px;">Hello! Welcome to the Sub2API AI service platform.</p><p style="margin-bottom: 12px;"><b>🎯 Quick Start:</b></p><ul style="margin-left: 20px; margin-bottom: 16px;"><li>🔑 Create API Key</li><li>📋 Copy key to your application</li><li>🚀 Start using AI services</li></ul><p style="color: #10b981; font-weight: 600;">Just 1 minute, let\'s get started →</p></div>',
++        title: '👋 Welcome to Doit API',
++        description: '<div style="line-height: 1.8;"><p style="margin-bottom: 16px;">Hello! Welcome to the Doit API AI service platform.</p><p style="margin-bottom: 12px;"><b>🎯 Quick Start:</b></p><ul style="margin-left: 20px; margin-bottom: 16px;"><li>🔑 Create API Key</li><li>📋 Copy key to your application</li><li>🚀 Start using AI services</li></ul><p style="color: #2f8f5b; font-weight: 600;">Just 1 minute, let\'s get started →</p></div>',
+         nextBtn: 'Start 🚀',
+         prevBtn: 'Skip'
+       },
+diff --git a/frontend/src/i18n/locales/zh.ts b/frontend/src/i18n/locales/zh.ts
+index a148f85..5a60ce2 100644
+--- a/frontend/src/i18n/locales/zh.ts
++++ b/frontend/src/i18n/locales/zh.ts
+@@ -187,8 +187,8 @@ export default {
+ 
+   // Setup Wizard
+   setup: {
+-    title: 'Sub2API 安装向导',
+-    description: '配置您的 Sub2API 实例',
++    title: 'Doit API 安装向导',
++    description: '配置您的 Doit API 实例',
+     database: {
+       title: '数据库配置',
+       description: '连接到您的 PostgreSQL 数据库',
+@@ -5732,7 +5732,7 @@ export default {
+           '禁用用户注册、公开页面和自助服务功能。仅管理员可以登录和管理平台。',
+         siteName: '站点名称',
+         siteNameHint: '显示在邮件和页面标题中',
+-        siteNamePlaceholder: 'Sub2API',
++        siteNamePlaceholder: 'Doit API',
+         siteSubtitle: '站点副标题',
+         siteSubtitleHint: '显示在登录和注册页面',
+         siteSubtitlePlaceholder: '订阅转 API 转换平台',
+@@ -6023,7 +6023,7 @@ export default {
+         fromEmail: '发件人邮箱',
+         fromEmailPlaceholder: "noreply{'@'}example.com",
+         fromName: '发件人名称',
+-        fromNamePlaceholder: 'Sub2API',
++        fromNamePlaceholder: 'Doit API',
+         useTls: '使用 TLS',
+         useTlsHint: '为 SMTP 连接启用 TLS 加密'
+       },
+@@ -6659,16 +6659,16 @@ export default {
+     // Admin tour steps
+     admin: {
+       welcome: {
+-        title: '👋 欢迎使用 Sub2API',
++        title: '👋 欢迎使用 Doit API',
+         description:
+-          '<div style="line-height: 1.8;"><p style="margin-bottom: 16px;">Sub2API 是一个强大的 AI 服务中转平台，让您轻松管理和分发 AI 服务。</p><p style="margin-bottom: 12px;"><b>🎯 核心功能：</b></p><ul style="margin-left: 20px; margin-bottom: 16px;"><li>📦 <b>分组管理</b> - 创建不同的服务套餐（VIP、免费试用等）</li><li>🔗 <b>账号池</b> - 连接多个上游 AI 服务商账号</li><li>🔑 <b>密钥分发</b> - 为用户生成独立的 API Key</li><li>💰 <b>计费管理</b> - 灵活的费率和配额控制</li></ul><p style="color: #10b981; font-weight: 600;">接下来，我们将用 3 分钟带您完成首次配置 →</p></div>',
++          '<div style="line-height: 1.8;"><p style="margin-bottom: 16px;">Doit API 是您的本地 AI 服务中转站，让您轻松管理和分发 AI 服务。</p><p style="margin-bottom: 12px;"><b>🎯 核心功能：</b></p><ul style="margin-left: 20px; margin-bottom: 16px;"><li>📦 <b>分组管理</b> - 创建不同的服务套餐（VIP、免费试用等）</li><li>🔗 <b>账号池</b> - 连接多个上游 AI 服务商账号</li><li>🔑 <b>密钥分发</b> - 为用户生成独立的 API Key</li><li>💰 <b>计费管理</b> - 灵活的费率和配额控制</li></ul><p style="color: #2f8f5b; font-weight: 600;">接下来，我们将用 3 分钟带您完成首次配置 →</p></div>',
+         nextBtn: '开始配置 🚀',
+         prevBtn: '跳过'
+       },
+       groupManage: {
+         title: '📦 第一步：分组管理',
+         description:
+-          '<div style="line-height: 1.7;"><p style="margin-bottom: 12px;"><b>什么是分组？</b></p><p style="margin-bottom: 12px;">分组是 Sub2API 的核心概念，它就像一个"服务套餐"：</p><ul style="margin-left: 20px; margin-bottom: 12px; font-size: 13px;"><li>🎯 每个分组可以包含多个上游账号</li><li>💰 每个分组有独立的计费倍率</li><li>👥 可以设置为公开或专属分组</li></ul><p style="margin-top: 12px; padding: 8px 12px; background: #f0fdf4; border-left: 3px solid #10b981; border-radius: 4px; font-size: 13px;"><b>💡 示例：</b>您可以创建"VIP专线"（高倍率）和"免费试用"（低倍率）两个分组</p><p style="margin-top: 16px; color: #10b981; font-weight: 600;">👉 点击左侧的"分组管理"开始</p></div>'
++          '<div style="line-height: 1.7;"><p style="margin-bottom: 12px;"><b>什么是分组？</b></p><p style="margin-bottom: 12px;">分组是 Doit API 的核心概念，它就像一个"服务套餐"：</p><ul style="margin-left: 20px; margin-bottom: 12px; font-size: 13px;"><li>🎯 每个分组可以包含多个上游账号</li><li>💰 每个分组有独立的计费倍率</li><li>👥 可以设置为公开或专属分组</li></ul><p style="margin-top: 12px; padding: 8px 12px; background: #eef8ef; border-left: 3px solid #2f8f5b; border-radius: 4px; font-size: 13px;"><b>💡 示例：</b>您可以创建"VIP专线"（高倍率）和"免费试用"（低倍率）两个分组</p><p style="margin-top: 16px; color: #2f8f5b; font-weight: 600;">👉 点击左侧的"分组管理"开始</p></div>'
+       },
+       createGroup: {
+         title: '➕ 创建新分组',
+@@ -6780,9 +6780,9 @@ export default {
+     // User tour steps
+     user: {
+       welcome: {
+-        title: '👋 欢迎使用 Sub2API',
++        title: '👋 欢迎使用 Doit API',
+         description:
+-          '<div style="line-height: 1.8;"><p style="margin-bottom: 16px;">您好！欢迎来到 Sub2API AI 服务平台。</p><p style="margin-bottom: 12px;"><b>🎯 快速开始：</b></p><ul style="margin-left: 20px; margin-bottom: 16px;"><li>🔑 创建 API 密钥</li><li>📋 复制密钥到您的应用</li><li>🚀 开始使用 AI 服务</li></ul><p style="color: #10b981; font-weight: 600;">只需 1 分钟，让我们开始吧 →</p></div>',
++          '<div style="line-height: 1.8;"><p style="margin-bottom: 16px;">您好！欢迎来到 Doit API AI 服务平台。</p><p style="margin-bottom: 12px;"><b>🎯 快速开始：</b></p><ul style="margin-left: 20px; margin-bottom: 16px;"><li>🔑 创建 API 密钥</li><li>📋 复制密钥到您的应用</li><li>🚀 开始使用 AI 服务</li></ul><p style="color: #2f8f5b; font-weight: 600;">只需 1 分钟，让我们开始吧 →</p></div>',
+         nextBtn: '开始 🚀',
+         prevBtn: '跳过'
+       },
+diff --git a/frontend/src/style.css b/frontend/src/style.css
+index 95d6461..3d0ae26 100644
+--- a/frontend/src/style.css
++++ b/frontend/src/style.css
+@@ -4,7 +4,7 @@
+ 
+ @layer base {
+   * {
+-    @apply border-[#e4dacb] dark:border-[#3b2a22];
++    @apply border-[#e7dccd] dark:border-[#2f2619];
+   }
+ 
+   html {
+@@ -12,7 +12,7 @@
+   }
+ 
+   body {
+-    @apply bg-[#f7f2ea] text-[#3a332a] dark:bg-[#100d0b] dark:text-gray-100;
++    @apply bg-[#faf9f5] text-[#263126] dark:bg-[#10120d] dark:text-gray-100;
+     @apply min-h-screen;
+   }
+ 
+@@ -69,29 +69,29 @@
+     @apply inline-flex items-center justify-center gap-2;
+     @apply rounded-xl px-4 py-2.5 text-sm font-medium;
+     @apply transition-all duration-200 ease-out;
+-    @apply focus:outline-none focus:ring-2 focus:ring-primary-500/50 focus:ring-offset-2 focus:ring-offset-[#f7f2ea] dark:focus:ring-offset-[#100d0b];
++    @apply focus:outline-none focus:ring-2 focus:ring-accent-500/45 focus:ring-offset-2 focus:ring-offset-[#faf9f5] dark:focus:ring-offset-[#10120d];
+     @apply disabled:transform-none disabled:cursor-not-allowed disabled:opacity-50;
+     @apply active:scale-[0.98];
+   }
+ 
+   .btn-primary {
+-    @apply bg-gradient-to-r from-primary-500 to-primary-700;
+-    @apply text-white shadow-md shadow-primary-600/25;
+-    @apply hover:from-primary-400 hover:to-primary-600 hover:shadow-lg hover:shadow-primary-600/30;
+-    @apply dark:shadow-primary-500/20;
++    @apply bg-gradient-to-r from-accent-600 to-primary-500;
++    @apply text-white shadow-md shadow-accent-700/20;
++    @apply hover:from-accent-500 hover:to-primary-400 hover:shadow-lg hover:shadow-primary-500/25;
++    @apply dark:shadow-accent-500/20;
+   }
+ 
+   .btn-secondary {
+-    @apply bg-[#fffaf4] dark:bg-dark-800;
+-    @apply text-[#4a3328] dark:text-gray-200;
+-    @apply border border-[#e4dacb] dark:border-[#3b2a22];
++    @apply bg-[#fffdf8] dark:bg-dark-800;
++    @apply text-[#263126] dark:text-gray-200;
++    @apply border border-[#e7dccd] dark:border-[#2f2619];
+     @apply shadow-sm shadow-primary-900/5 hover:bg-white dark:hover:bg-dark-700;
+     @apply hover:border-primary-200 dark:hover:border-primary-900/60;
+   }
+ 
+   .btn-ghost {
+-    @apply bg-transparent text-[#6f6258] dark:text-gray-300;
+-    @apply hover:bg-primary-100/60 hover:text-primary-800 dark:hover:bg-primary-950/30 dark:hover:text-primary-200;
++    @apply bg-transparent text-[#5c624d] dark:text-gray-300;
++    @apply hover:bg-primary-100/70 hover:text-accent-700 dark:hover:bg-accent-950/30 dark:hover:text-accent-200;
+   }
+ 
+   .btn-danger {
+@@ -161,13 +161,13 @@
+   /* ============ 输入框样式 ============ */
+   .input {
+     @apply w-full rounded-xl px-4 py-2.5 text-sm;
+-    @apply bg-[#fffaf4] dark:bg-dark-800;
+-    @apply border border-[#e4dacb] dark:border-[#3b2a22];
+-    @apply text-[#3a332a] dark:text-gray-100;
+-    @apply placeholder:text-[#a69a8b] dark:placeholder:text-dark-400;
++    @apply bg-[#fffdf8] dark:bg-dark-800;
++    @apply border border-[#e7dccd] dark:border-[#2f2619];
++    @apply text-[#263126] dark:text-gray-100;
++    @apply placeholder:text-[#9a8f80] dark:placeholder:text-dark-400;
+     @apply transition-all duration-200;
+-    @apply focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/30;
+-    @apply disabled:cursor-not-allowed disabled:bg-[#eee6da] dark:disabled:bg-dark-900;
++    @apply focus:border-accent-500 focus:outline-none focus:ring-2 focus:ring-accent-500/25;
++    @apply disabled:cursor-not-allowed disabled:bg-[#f0e7da] dark:disabled:bg-dark-900;
+   }
+ 
+   .input-error {
+@@ -175,11 +175,11 @@
+   }
+ 
+   .input-label {
+-    @apply mb-1.5 block text-sm font-medium text-[#4a3328] dark:text-gray-300;
++    @apply mb-1.5 block text-sm font-medium text-[#263126] dark:text-gray-300;
+   }
+ 
+   .input-hint {
+-    @apply mt-1 text-xs text-[#8a8174] dark:text-dark-400;
++    @apply mt-1 text-xs text-[#7b765e] dark:text-dark-400;
+   }
+ 
+   .input-error-text {
+@@ -199,41 +199,41 @@
+ 
+   /* ============ 玻璃效果 ============ */
+   .glass {
+-    @apply bg-[#fffaf4]/80 backdrop-blur-xl dark:bg-dark-800/80;
++    @apply bg-[#fffdf8]/[.84] backdrop-blur-xl dark:bg-dark-800/80;
+   }
+ 
+   .glass-card {
+-    @apply bg-[#fffaf4]/80 dark:bg-dark-800/70;
++    @apply bg-[#fffdf8]/[.84] dark:bg-dark-800/70;
+     @apply backdrop-blur-xl;
+     @apply rounded-2xl;
+-    @apply border border-[#fff7ed]/70 dark:border-[#3b2a22]/60;
++    @apply border border-[#eadfce]/75 dark:border-[#2f2619]/60;
+     @apply shadow-glass;
+     @apply transition-all duration-300;
+   }
+ 
+   /* ============ 卡片样式 ============ */
+   .card {
+-    @apply bg-[#fffaf4] dark:bg-dark-800/60;
++    @apply bg-[#fffdf8] dark:bg-dark-800/60;
+     @apply rounded-2xl;
+-    @apply border border-[#eadfce] dark:border-[#3b2a22]/70;
++    @apply border border-[#e7dccd] dark:border-[#2f2619]/70;
+     @apply shadow-card;
+     @apply transition-all duration-300;
+   }
+ 
+   .card-hover {
+     @apply hover:-translate-y-0.5 hover:shadow-card-hover;
+-    @apply hover:border-primary-200 dark:hover:border-primary-900/60;
++    @apply hover:border-primary-300 dark:hover:border-primary-900/60;
+   }
+ 
+   .card-glass {
+-    @apply bg-[#fffaf4]/80 dark:bg-dark-800/70;
++    @apply bg-[#fffdf8]/[.86] dark:bg-dark-800/70;
+     @apply backdrop-blur-xl;
+-    @apply border border-[#fff7ed]/70 dark:border-[#3b2a22]/60;
++    @apply border border-[#eadfce]/75 dark:border-[#2f2619]/60;
+     @apply shadow-glass;
+   }
+ 
+   .card-header {
+-    @apply border-b border-[#eadfce] dark:border-[#3b2a22];
++    @apply border-b border-[#e7dccd] dark:border-[#2f2619];
+     @apply px-6 py-4;
+   }
+ 
+@@ -242,7 +242,7 @@
+   }
+ 
+   .card-footer {
+-    @apply border-t border-[#eadfce] dark:border-[#3b2a22];
++    @apply border-t border-[#e7dccd] dark:border-[#2f2619];
+     @apply px-6 py-4;
+   }
+ 
+@@ -259,7 +259,7 @@
+   }
+ 
+   .stat-icon-primary {
+-    @apply bg-primary-100 text-primary-700 shadow-sm shadow-primary-600/10 dark:bg-primary-900/30 dark:text-primary-300;
++    @apply bg-primary-100 text-accent-700 shadow-sm shadow-primary-600/10 dark:bg-primary-900/30 dark:text-primary-300;
+   }
+ 
+   .stat-icon-success {
+@@ -296,7 +296,7 @@
+ 
+   /* ============ 表格样式 ============ */
+   .table-container {
+-    @apply overflow-x-auto rounded-xl border border-[#e4dacb] dark:border-[#3b2a22];
++    @apply overflow-x-auto rounded-xl border border-[#e7dccd] dark:border-[#2f2619];
+   }
+ 
+   .table {
+@@ -305,15 +305,15 @@
+ 
+   .table th {
+     @apply px-4 py-3 text-left font-medium;
+-    @apply text-[#6f6258] dark:text-dark-300;
+-    @apply bg-[#f5eadc] dark:bg-dark-800/50;
+-    @apply border-b border-[#e4dacb] dark:border-[#3b2a22];
++    @apply text-[#5c624d] dark:text-dark-300;
++    @apply bg-[#f7f1e6] dark:bg-dark-800/50;
++    @apply border-b border-[#e7dccd] dark:border-[#2f2619];
+   }
+ 
+   .table td {
+     @apply px-4 py-3;
+-    @apply text-[#4a453d] dark:text-gray-300;
+-    @apply border-b border-[#efe5d8] dark:border-dark-800;
++    @apply text-[#3f4639] dark:text-gray-300;
++    @apply border-b border-[#eee5d8] dark:border-dark-800;
+   }
+ 
+   .table tr:last-child td {
+@@ -332,7 +332,7 @@
+   }
+ 
+   .badge-primary {
+-    @apply bg-primary-100 text-primary-800 ring-1 ring-primary-200/70 dark:bg-primary-900/30 dark:text-primary-300 dark:ring-primary-800/50;
++    @apply bg-primary-100 text-accent-800 ring-1 ring-primary-200/70 dark:bg-primary-900/30 dark:text-primary-300 dark:ring-primary-800/50;
+   }
+ 
+   .badge-success {
+@@ -348,7 +348,7 @@
+   }
+ 
+   .badge-gray {
+-    @apply bg-[#eee6da] text-[#6f6258] dark:bg-dark-700 dark:text-dark-300;
++    @apply bg-[#efe5d8] text-[#5c624d] dark:bg-dark-700 dark:text-dark-300;
+   }
+ 
+   .badge-purple {
+@@ -358,9 +358,9 @@
+   /* ============ 下拉菜单 ============ */
+   .dropdown {
+     @apply absolute z-50;
+-    @apply bg-[#fffaf4] dark:bg-dark-800;
++    @apply bg-[#fffdf8] dark:bg-dark-800;
+     @apply rounded-xl;
+-    @apply border border-[#e4dacb] dark:border-[#3b2a22];
++    @apply border border-[#e7dccd] dark:border-[#2f2619];
+     @apply shadow-lg shadow-primary-950/10;
+     @apply py-1;
+     @apply origin-top-right animate-scale-in;
+@@ -368,8 +368,8 @@
+ 
+   .dropdown-item {
+     @apply px-4 py-2 text-sm;
+-    @apply text-[#4a453d] dark:text-gray-300;
+-    @apply hover:bg-primary-100/60 dark:hover:bg-dark-700;
++    @apply text-[#3f4639] dark:text-gray-300;
++    @apply hover:bg-primary-100/70 dark:hover:bg-dark-700;
+     @apply cursor-pointer transition-colors;
+     @apply flex items-center gap-2;
+   }
+@@ -520,14 +520,14 @@
+   }
+ 
+   .toast-info {
+-    @apply border-l-primary-500;
++    @apply border-l-accent-500;
+   }
+ 
+   /* ============ 侧边栏 ============ */
+   .sidebar {
+     @apply fixed inset-y-0 left-0 z-40;
+-    @apply w-64 bg-[#fffaf4] dark:bg-[#15110f];
+-    @apply border-r border-[#e4dacb] dark:border-[#33241e];
++    @apply w-64 bg-[#f6f1e9] dark:bg-[#12140f];
++    @apply border-r border-[#ded6cc] dark:border-[#2f2619];
+     @apply flex flex-col;
+     @apply shadow-glass-sm;
+     @apply transition-transform duration-300;
+@@ -537,7 +537,7 @@
+   .sidebar-header {
+     @apply h-16 px-6;
+     @apply flex items-center gap-3;
+-    @apply border-b border-[#eadfce] dark:border-[#33241e];
++    @apply border-b border-[#ded6cc] dark:border-[#2f2619];
+     transition:
+       padding 0.2s ease,
+       gap 0.2s ease;
+@@ -551,19 +551,25 @@
+     @apply flex items-center gap-3 rounded-xl py-2.5;
+     @apply overflow-hidden;
+     @apply text-sm font-medium;
+-    @apply text-[#6f6258] dark:text-dark-300;
++    @apply text-[#59604c] dark:text-dark-300;
+     @apply transition-all duration-200;
+-    @apply hover:bg-primary-100/70 dark:hover:bg-primary-950/30;
+-    @apply hover:text-primary-800 dark:hover:text-primary-200;
++    @apply hover:bg-[#fffdf8] dark:hover:bg-accent-950/30;
++    @apply hover:text-accent-700 dark:hover:text-accent-200;
+     padding-left: 1.0625rem;
+     padding-right: 0.875rem;
+   }
+ 
+   .sidebar-link-active {
+-    @apply bg-primary-100 text-primary-800 shadow-sm shadow-primary-600/10 dark:bg-primary-900/30;
+-    @apply ring-1 ring-primary-200/70 dark:ring-primary-800/50;
+-    @apply dark:text-primary-200;
+-    @apply hover:bg-primary-100 dark:hover:bg-primary-900/40;
++    @apply bg-[#fffdf8] text-accent-800 shadow-sm shadow-primary-600/5 dark:bg-accent-900/30;
++    @apply ring-1 ring-[#e1d8cd] dark:ring-accent-800/50;
++    @apply dark:text-accent-200;
++    @apply hover:bg-[#fffdf8] dark:hover:bg-accent-900/40;
++    position: relative;
++  }
++
++  .sidebar-link-active::before {
++    content: '';
++    @apply absolute left-1 top-1/2 h-5 w-1 -translate-y-1/2 rounded-full bg-accent-600;
+   }
+ 
+   .sidebar-section {
+@@ -573,7 +579,7 @@
+   .sidebar-section-title {
+     @apply mb-2 px-3;
+     @apply text-xs font-semibold uppercase tracking-wider;
+-    @apply text-[#a69a8b] dark:text-dark-500;
++    @apply text-[#8a805e] dark:text-dark-500;
+   }
+ 
+   /* ============ 页面头部 ============ */
+@@ -582,11 +588,11 @@
+   }
+ 
+   .page-title {
+-    @apply text-2xl font-bold text-[#3a332a] dark:text-white;
++    @apply text-2xl font-bold text-[#263126] dark:text-white;
+   }
+ 
+   .page-description {
+-    @apply mt-1 text-sm text-[#8a8174] dark:text-dark-400;
++    @apply mt-1 text-sm text-[#7b765e] dark:text-dark-400;
+   }
+ 
+   /* ============ 空状态 ============ */
+@@ -601,11 +607,11 @@
+   }
+ 
+   .empty-state-title {
+-    @apply mb-1 text-lg font-medium text-[#3a332a] dark:text-white;
++    @apply mb-1 text-lg font-medium text-[#263126] dark:text-white;
+   }
+ 
+   .empty-state-description {
+-    @apply max-w-sm text-sm text-[#8a8174] dark:text-dark-400;
++    @apply max-w-sm text-sm text-[#7b765e] dark:text-dark-400;
+   }
+ 
+   /* ============ 加载状态 ============ */
+@@ -615,52 +621,52 @@
+   }
+ 
+   .skeleton {
+-    @apply animate-pulse rounded bg-[#e4dacb] dark:bg-dark-700;
++    @apply animate-pulse rounded bg-[#e7dccd] dark:bg-dark-700;
+   }
+ 
+   /* ============ 分隔线 ============ */
+   .divider {
+-    @apply my-4 h-px bg-[#e4dacb] dark:bg-dark-700;
++    @apply my-4 h-px bg-[#e7dccd] dark:bg-dark-700;
+   }
+ 
+   /* ============ 标签页 ============ */
+   .tabs {
+     @apply flex gap-1 p-1;
+-    @apply rounded-xl bg-[#eee6da] dark:bg-dark-800;
++    @apply rounded-xl bg-[#eee4d5] dark:bg-dark-800;
+   }
+ 
+   .tab {
+     @apply rounded-lg px-4 py-2 text-sm font-medium;
+-    @apply text-[#6f6258] dark:text-dark-400;
++    @apply text-[#59604c] dark:text-dark-400;
+     @apply transition-all duration-200;
+     @apply hover:text-gray-900 dark:hover:text-white;
+   }
+ 
+   .tab-active {
+-    @apply bg-[#fffaf4] dark:bg-dark-700;
+-    @apply text-[#3a332a] dark:text-white;
++    @apply bg-[#fffdf8] dark:bg-dark-700;
++    @apply text-[#263126] dark:text-white;
+     @apply shadow-sm;
+   }
+ 
+   /* ============ 进度条 ============ */
+   .progress {
+-    @apply h-2 overflow-hidden rounded-full bg-[#e4dacb] dark:bg-dark-700;
++    @apply h-2 overflow-hidden rounded-full bg-[#e7dccd] dark:bg-dark-700;
+   }
+ 
+   .progress-bar {
+-    @apply h-full bg-gradient-to-r from-primary-500 to-primary-400;
++    @apply h-full bg-gradient-to-r from-accent-600 to-primary-400;
+     @apply transition-all duration-300;
+   }
+ 
+   /* ============ 开关 ============ */
+   .switch {
+     @apply relative h-6 w-11 cursor-pointer rounded-full;
+-    @apply bg-[#d6cebd] dark:bg-dark-600;
++    @apply bg-[#d8cabb] dark:bg-dark-600;
+     @apply transition-colors duration-200;
+   }
+ 
+   .switch-active {
+-    @apply bg-primary-500;
++    @apply bg-accent-600;
+   }
+ 
+   .switch-thumb {
+@@ -678,7 +684,7 @@
+     @apply font-mono text-sm;
+     @apply bg-primary-50 dark:bg-dark-800;
+     @apply rounded px-1.5 py-0.5;
+-    @apply text-primary-600 dark:text-primary-400;
++    @apply text-accent-700 dark:text-primary-400;
+   }
+ 
+   .code-block {
+@@ -744,7 +750,7 @@
+ 
+   /* 玻璃效果 */
+   .glass {
+-    @apply bg-[#fffaf4]/80 backdrop-blur-xl dark:bg-dark-800/80;
++    @apply bg-[#fffdf8]/[.84] backdrop-blur-xl dark:bg-dark-800/80;
+   }
+ 
+   /* 隐藏滚动条 */
+diff --git a/frontend/tailwind.config.js b/frontend/tailwind.config.js
+index ba70ed4..bf17f14 100644
+--- a/frontend/tailwind.config.js
++++ b/frontend/tailwind.config.js
+@@ -5,33 +5,33 @@ export default {
+   theme: {
+     extend: {
+       colors: {
+-        // Warm clay-orange brand palette.
++        // Doit brand palette: Claude-like warm paper neutrals with pine-green contrast.
+         primary: {
+-          50: '#fff7ed',
+-          100: '#ffedd5',
+-          200: '#fed7aa',
+-          300: '#fdba74',
+-          400: '#f59f5b',
+-          500: '#e48556',
+-          600: '#c96442',
+-          700: '#a84d34',
+-          800: '#843d2d',
+-          900: '#6b3428',
+-          950: '#3a1a12'
++          50: '#fbfaf6',
++          100: '#f3eee6',
++          200: '#e6dbcf',
++          300: '#d4c4b5',
++          400: '#bba28e',
++          500: '#9a7b66',
++          600: '#7a5e4d',
++          700: '#5d473b',
++          800: '#44342c',
++          900: '#30241f',
++          950: '#1d1714'
+         },
+-        // Neutral slate palette for supporting UI.
++        // Pine green contrast for actions and identity accents.
+         accent: {
+-          50: '#f8fafc',
+-          100: '#f1f5f9',
+-          200: '#e2e8f0',
+-          300: '#cbd5e1',
+-          400: '#94a3b8',
+-          500: '#64748b',
+-          600: '#475569',
+-          700: '#334155',
+-          800: '#1e293b',
+-          900: '#0f172a',
+-          950: '#020617'
++          50: '#eef8ef',
++          100: '#d7efda',
++          200: '#b2dfb9',
++          300: '#83c990',
++          400: '#55ad6e',
++          500: '#2f8f5b',
++          600: '#207548',
++          700: '#1b5d3c',
++          800: '#184a33',
++          900: '#153d2d',
++          950: '#0b231a'
+         },
+         dark: {
+           50: '#f8fafc',
+@@ -64,22 +64,22 @@ export default {
+         mono: ['ui-monospace', 'SFMono-Regular', 'Menlo', 'Monaco', 'Consolas', 'monospace']
+       },
+       boxShadow: {
+-        glass: '0 18px 50px rgba(94, 59, 35, 0.10)',
+-        'glass-sm': '0 8px 24px rgba(94, 59, 35, 0.08)',
+-        glow: '0 0 22px rgba(228, 133, 86, 0.28)',
+-        'glow-lg': '0 0 44px rgba(228, 133, 86, 0.34)',
+-        card: '0 1px 2px rgba(58, 51, 42, 0.05), 0 10px 30px rgba(106, 71, 45, 0.07)',
+-        'card-hover': '0 16px 44px rgba(106, 71, 45, 0.12)',
+-        'inner-glow': 'inset 0 1px 0 rgba(255, 250, 244, 0.72)'
++        glass: '0 18px 50px rgba(68, 52, 44, 0.07)',
++        'glass-sm': '0 8px 24px rgba(68, 52, 44, 0.055)',
++        glow: '0 0 22px rgba(154, 123, 102, 0.14)',
++        'glow-lg': '0 0 44px rgba(47, 143, 91, 0.24)',
++        card: '0 1px 2px rgba(40, 49, 38, 0.04), 0 10px 30px rgba(68, 52, 44, 0.055)',
++        'card-hover': '0 16px 44px rgba(68, 52, 44, 0.08)',
++        'inner-glow': 'inset 0 1px 0 rgba(253, 250, 244, 0.86)'
+       },
+       backgroundImage: {
+         'gradient-radial': 'radial-gradient(var(--tw-gradient-stops))',
+-        'gradient-primary': 'linear-gradient(135deg, #e48556 0%, #c96442 100%)',
+-        'gradient-dark': 'linear-gradient(135deg, #2d241e 0%, #14100d 100%)',
++        'gradient-primary': 'linear-gradient(135deg, #9a7b66 0%, #2f8f5b 100%)',
++        'gradient-dark': 'linear-gradient(135deg, #251c16 0%, #14100d 100%)',
+         'gradient-glass':
+-          'linear-gradient(135deg, rgba(255,250,244,0.72) 0%, rgba(255,247,237,0.48) 100%)',
++          'linear-gradient(135deg, rgba(253,252,248,0.86) 0%, rgba(250,249,245,0.62) 100%)',
+         'mesh-gradient':
+-          'radial-gradient(at 24% 12%, rgba(228, 133, 86, 0.13) 0px, transparent 44%), radial-gradient(at 82% 4%, rgba(201, 100, 66, 0.10) 0px, transparent 42%), radial-gradient(at 5% 54%, rgba(253, 186, 116, 0.10) 0px, transparent 46%)'
++          'linear-gradient(120deg, rgba(230, 219, 207, 0.18), transparent 42%), linear-gradient(180deg, rgba(47, 143, 91, 0.035), transparent 38%), linear-gradient(rgba(93, 71, 59, 0.02) 1px, transparent 1px), linear-gradient(90deg, rgba(93, 71, 59, 0.018) 1px, transparent 1px)'
+       },
+       animation: {
+         'fade-in': 'fadeIn 0.3s ease-out',
+@@ -117,8 +117,8 @@ export default {
+           '100%': { backgroundPosition: '200% 0' }
+         },
+         glow: {
+-          '0%': { boxShadow: '0 0 20px rgba(228, 133, 86, 0.24)' },
+-          '100%': { boxShadow: '0 0 30px rgba(228, 133, 86, 0.38)' }
++          '0%': { boxShadow: '0 0 20px rgba(154, 123, 102, 0.12)' },
++          '100%': { boxShadow: '0 0 30px rgba(47, 143, 91, 0.28)' }
+         }
+       },
+       backdropBlur: {

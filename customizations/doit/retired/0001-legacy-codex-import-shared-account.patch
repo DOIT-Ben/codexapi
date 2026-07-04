@@ -1,0 +1,50 @@
+diff --git a/backend/internal/handler/admin/account_codex_import.go b/backend/internal/handler/admin/account_codex_import.go
+index c5fcfd1..70d6892 100644
+--- a/backend/internal/handler/admin/account_codex_import.go
++++ b/backend/internal/handler/admin/account_codex_import.go
+@@ -806,11 +806,10 @@ func buildCodexIdentityKeys(accountID, userID, email, accessToken string) []stri
+ 	keys := make([]string, 0, 4)
+ 	accountID = strings.TrimSpace(accountID)
+ 	userID = strings.TrimSpace(userID)
+-	if accountID != "" {
+-		keys = append(keys, "account:"+accountID)
+-	}
+ 	if userID != "" {
+ 		keys = append(keys, "user:"+userID)
++	} else if accountID != "" {
++		keys = append(keys, "account:"+accountID)
+ 	}
+ 	if accountID == "" && userID == "" {
+ 		if email = strings.ToLower(strings.TrimSpace(email)); email != "" {
+diff --git a/backend/internal/handler/admin/account_codex_import_test.go b/backend/internal/handler/admin/account_codex_import_test.go
+index 3cf0d2b..d198f83 100644
+--- a/backend/internal/handler/admin/account_codex_import_test.go
++++ b/backend/internal/handler/admin/account_codex_import_test.go
+@@ -304,6 +304,9 @@ func TestCodexIdentityKeysPreferStrongIdentifiers(t *testing.T) {
+ 		if strings.HasPrefix(key, "email:") {
+ 			t.Fatalf("strong identity should not include email fallback: %v", keys)
+ 		}
++		if strings.HasPrefix(key, "account:") {
++			t.Fatalf("user identity should not be collapsed by shared account: %v", keys)
++		}
+ 	}
+ 
+ 	keys = buildCodexIdentityKeys("", "", "same@example.com", "token")
+@@ -318,6 +321,17 @@ func TestCodexIdentityKeysPreferStrongIdentifiers(t *testing.T) {
+ 	}
+ }
+ 
++func TestCodexIdentityKeysAllowSharedTeamAccountUsers(t *testing.T) {
++	first := buildCodexIdentityKeys("team-account", "user-1", "one@example.com", "token-1")
++	second := buildCodexIdentityKeys("team-account", "user-2", "two@example.com", "token-2")
++
++	seen := map[string]int{}
++	markCodexIdentitySeen(seen, first, 1)
++	if duplicate, ok := firstSeenCodexIdentity(seen, second); ok {
++		t.Fatalf("different users under one team account should not be duplicate of %d; first=%v second=%v", duplicate, first, second)
++	}
++}
++
+ func buildCodexImportTestJWT(t *testing.T, exp time.Time, extraClaims map[string]any) string {
+ 	t.Helper()
+ 	header := map[string]any{

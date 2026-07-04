@@ -23,6 +23,20 @@
 **/caddy_data/
 **/caddy_config/
 
+# Upstream sync generated/local-only directories
+sub2api-official/
+workbench/upstream-sync/
+workbench/upstream-sync/sub2api-doit-*/
+workbench/upstream-sync/staging_data/
+workbench/upstream-sync/staging_postgres_data/
+workbench/upstream-sync/staging_redis_data/
+
+# Local analysis/build artifacts
+graphify-out/
+sub2api/backend/sub2api-new
+workbench/*.png
+workbench/image-test-*.json
+
 chrome-shot/profile*/
 *.log
 *.tmp
