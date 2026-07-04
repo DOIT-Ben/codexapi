@@ -188,6 +188,7 @@ staging 容器状态入口：
 - 刷新、审计、证据报告和 promotion preflight 一体化入口已通过，最终输出 `Refresh result: PASS`。
 - promotion preflight 已接入证据报告一致性检查，并验证通过：`upstream absorption report - report matches current versions`。
 - promotion dry-run 已接入证据报告一致性检查，并验证通过：`report check: report matches current versions`；正式 `-Execute` 会在替换前再次执行该门禁。
+- promotion dry-run 和 execute 已接入机器可读 JSON 计划：`workbench\upstream-sync\reports\sub2api-promotion-plan-latest.json`。
 - 本地审计已扩展上游吸收资产完整性门禁，验证通过：`required upstream-sync assets are present - 29/29`。
 - 本地审计已扩展生成物忽略门禁，验证通过：`generated/local artifact paths are git-ignored - 7/7`。
 - 本地审计已扩展旧项目差异归档门禁，验证通过：`local sub2api diffs are inventoried - 10/10`。以后旧 `sub2api` 新增 modified 文件时，必须同步更新 `docs\upstream-sync\2026-07-05-doit-local-diff-inventory.md`。

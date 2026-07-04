@@ -69,7 +69,13 @@
 .\scripts\sub2api-promote-staging.ps1
 ```
 
-预期：只打印 staging、target、backup、report、version、报告检查结果和保留路径，不替换当前项目。若报告检查不是 `report matches current versions`，不要执行替换，先重新运行：
+预期：打印 staging、target、backup、report、plan、version、报告检查结果和保留路径，不替换当前项目。dry-run 会写入机器可读计划：
+
+```powershell
+workbench\upstream-sync\reports\sub2api-promotion-plan-latest.json
+```
+
+若报告检查不是 `report matches current versions`，不要执行替换，先重新运行：
 
 ```powershell
 .\scripts\sub2api-refresh-upstream.ps1 -CheckHttp -RunAudit -WriteReport -RunPreflight
@@ -94,6 +100,8 @@ cd ..\..
 `-Execute` 会再次检查升级吸收报告是否匹配当前 target/staging 版本和官方 commit；报告缺失或过期时会拒绝替换。
 
 只有在明确接受热覆盖风险时，才允许追加 `-AllowRunningTarget`。默认流程不要使用该参数。
+
+执行被拦截时，promotion plan JSON 会记录 `blocked_stale_report` 或 `blocked_target_running`。执行成功后，该 JSON 会记录 `completed` 和实际备份路径。
 
 替换后构建并启动：
 

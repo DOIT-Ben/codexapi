@@ -4,6 +4,7 @@ param(
   [string]$TargetPath = ".\sub2api",
   [string]$BackupRoot = ".\backups\sub2api-promote",
   [string]$ReportPath = "",
+  [string]$PlanPath = ".\workbench\upstream-sync\reports\sub2api-promotion-plan-latest.json",
   [string]$TargetHealthUrl = "http://127.0.0.1:18082/health",
   [switch]$AllowRunningTarget,
   [switch]$Execute
@@ -130,6 +131,17 @@ function Test-HttpReachable {
   }
 }
 
+function Write-JsonRecord {
+  param(
+    [Parameter(Mandatory = $true)][string]$Path,
+    [Parameter(Mandatory = $true)][object]$Record
+  )
+  New-Item -ItemType Directory -Path (Split-Path -Parent $Path) -Force | Out-Null
+  $json = $Record | ConvertTo-Json -Depth 8
+  $encoding = [System.Text.UTF8Encoding]::new($false)
+  [System.IO.File]::WriteAllText($Path, $json + [Environment]::NewLine, $encoding)
+}
+
 $repoRoot = Get-RepoRoot
 Set-Location $repoRoot
 
@@ -150,11 +162,13 @@ $stagingFull = Resolve-PathFromRoot -Root $repoRoot -Path $StagingPath
 $targetFull = Resolve-PathFromRoot -Root $repoRoot -Path $TargetPath
 $backupRootFull = Resolve-PathFromRoot -Root $repoRoot -Path $BackupRoot
 $reportFull = Resolve-PathFromRoot -Root $repoRoot -Path $ReportPath
+$planFull = Resolve-PathFromRoot -Root $repoRoot -Path $PlanPath
 
 Assert-PathInside -Child $stagingFull -Parent $repoRoot -Purpose "Staging"
 Assert-PathInside -Child $targetFull -Parent $repoRoot -Purpose "Target"
 Assert-PathInside -Child $backupRootFull -Parent $repoRoot -Purpose "Backup"
 Assert-PathInside -Child $reportFull -Parent $repoRoot -Purpose "Report"
+Assert-PathInside -Child $planFull -Parent $repoRoot -Purpose "Plan"
 
 if (-not (Test-Path -LiteralPath $stagingFull -PathType Container)) {
   throw "Staging source not found: $stagingFull"
@@ -188,11 +202,45 @@ $preserveFiles = @(
   "deploy\config.yaml"
 )
 
+$promotionRecord = [ordered]@{
+  schema = "doit.sub2api.promotion-plan.v1"
+  generated_at = (Get-Date -Format "yyyy-MM-dd HH:mm:ss")
+  mode = $(if ($Execute) { "execute" } else { "dry-run" })
+  status = $(if ($Execute) { "planned" } else { "dry_run_ready" })
+  repo = $repoRoot
+  upstream_commit = $lockCommit
+  versions = [ordered]@{
+    target = $targetVersion
+    staging = $version
+  }
+  paths = [ordered]@{
+    staging = $stagingFull
+    target = $targetFull
+    backup = $backupFull
+    report = $reportFull
+    plan = $planFull
+  }
+  checks = [ordered]@{
+    absorption_report = [ordered]@{
+      ok = [bool]$reportCheck.Ok
+      detail = [string]$reportCheck.Detail
+    }
+    target_health = [ordered]@{
+      url = $TargetHealthUrl
+      ok = [bool]$targetHealth.Ok
+      detail = [string]$targetHealth.Detail
+    }
+    allow_running_target = [bool]$AllowRunningTarget
+  }
+  preserved_runtime_paths = @($preserveDirs + $preserveFiles)
+}
+
 Write-Host "Promotion plan:"
 Write-Host "  staging: $stagingFull"
 Write-Host "  target:  $targetFull"
 Write-Host "  backup:  $backupFull"
 Write-Host "  report:  $reportFull"
+Write-Host "  plan:    $planFull"
 Write-Host "  version: $version"
 Write-Host "  report check: $($reportCheck.Detail)"
 Write-Host "  target health: $TargetHealthUrl $($targetHealth.Detail)"
@@ -201,6 +249,9 @@ foreach ($path in ($preserveDirs + $preserveFiles)) {
   Write-Host "  - $path"
 }
 
+Write-JsonRecord -Path $planFull -Record $promotionRecord
+Write-Host "Promotion plan record written: $planFull"
+
 if (-not $Execute) {
   Write-Host ""
   Write-Host "Dry run only. Stop the target runtime first, then re-run with -Execute to promote staging into the current sub2api directory."
@@ -208,9 +259,13 @@ if (-not $Execute) {
 }
 
 if (-not $reportCheck.Ok) {
+  $promotionRecord["status"] = "blocked_stale_report"
+  Write-JsonRecord -Path $planFull -Record $promotionRecord
   throw "Refusing to execute promotion because the upstream absorption report is not current: $($reportCheck.Detail)"
 }
 if ($targetHealth.Ok -and -not $AllowRunningTarget) {
+  $promotionRecord["status"] = "blocked_target_running"
+  Write-JsonRecord -Path $planFull -Record $promotionRecord
   throw "Refusing to execute promotion while the target runtime is reachable at $TargetHealthUrl ($($targetHealth.Detail)). Stop the target container first, or pass -AllowRunningTarget only for an intentional hot overwrite."
 }
 
@@ -257,3 +312,8 @@ foreach ($relativePath in $preserveFiles) {
 Write-Host "Promotion completed."
 Write-Host "Backup created at: $backupFull"
 Write-Host "Runtime files were preserved and not printed."
+
+$promotionRecord["status"] = "completed"
+$promotionRecord["completed_at"] = (Get-Date -Format "yyyy-MM-dd HH:mm:ss")
+Write-JsonRecord -Path $planFull -Record $promotionRecord
+Write-Host "Promotion completion record written: $planFull"
