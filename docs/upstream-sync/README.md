@@ -31,6 +31,12 @@ Doit API 采用“官方 Sub2API 源码 + Doit 定制层”的吸收模式：
 .\scripts\sub2api-promote-staging.ps1
 ```
 
+只做 push 前只读核验：
+
+```powershell
+.\scripts\sub2api-push-preflight.ps1
+```
+
 ## 正式替换边界
 
 不要直接执行正式替换，除非用户明确授权。
@@ -42,6 +48,18 @@ Doit API 采用“官方 Sub2API 源码 + Doit 定制层”的吸收模式：
 ```
 
 该命令会再次检查升级吸收报告是否匹配当前 target/staging 版本和官方 commit。报告缺失或过期时会拒绝替换。
+
+## 推送边界
+
+不要直接 push，除非用户明确授权。
+
+push 前先运行：
+
+```powershell
+.\scripts\sub2api-push-preflight.ps1
+```
+
+预期输出是 `Push preflight result: READY_TO_PUSH_WITH_EXPLICIT_APPROVAL`。
 
 ## 文档索引
 

@@ -288,6 +288,7 @@ $requiredAssets = @(
   "scripts\sub2api-local-audit.ps1",
   "scripts\sub2api-promote-staging.ps1",
   "scripts\sub2api-promotion-preflight.ps1",
+  "scripts\sub2api-push-preflight.ps1",
   "scripts\sub2api-refresh-upstream.ps1",
   "scripts\sub2api-staging-compose.ps1",
   "scripts\sub2api-upstream-report.ps1",

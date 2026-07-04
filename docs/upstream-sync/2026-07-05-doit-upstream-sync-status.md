@@ -32,6 +32,7 @@
 - `scripts\sub2api-local-audit.ps1`
 - `scripts\sub2api-upstream-report.ps1`
 - `scripts\sub2api-promotion-preflight.ps1`
+- `scripts\sub2api-push-preflight.ps1`
 - `scripts\sub2api-promote-staging.ps1`
 
 ## 验证证据
@@ -184,7 +185,7 @@ staging 容器状态入口：
 - 刷新、审计、证据报告和 promotion preflight 一体化入口已通过，最终输出 `Refresh result: PASS`。
 - promotion preflight 已接入证据报告一致性检查，并验证通过：`upstream absorption report - report matches current versions`。
 - promotion dry-run 已接入证据报告一致性检查，并验证通过：`report check: report matches current versions`；正式 `-Execute` 会在替换前再次执行该门禁。
-- 本地审计已扩展上游吸收资产完整性门禁，验证通过：`required upstream-sync assets are present - 28/28`。
+- 本地审计已扩展上游吸收资产完整性门禁，验证通过：`required upstream-sync assets are present - 29/29`。
 - 本地审计已扩展生成物忽略门禁，验证通过：`generated/local artifact paths are git-ignored - 7/7`。
 - 本地审计已扩展旧项目差异归档门禁，验证通过：`local sub2api diffs are inventoried - 10/10`。以后旧 `sub2api` 新增 modified 文件时，必须同步更新 `docs\upstream-sync\2026-07-05-doit-local-diff-inventory.md`。
 - 本地审计已扩展可见未跟踪文件范围门禁，验证通过：`visible untracked files are expected project assets - 28 untracked assets in expected roots`。
