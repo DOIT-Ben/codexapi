@@ -291,6 +291,7 @@ $requiredAssets = @(
   "scripts\sub2api-push-preflight.ps1",
   "scripts\sub2api-refresh-upstream.ps1",
   "scripts\sub2api-staging-compose.ps1",
+  "scripts\sub2api-status.ps1",
   "scripts\sub2api-upstream-report.ps1",
   "scripts\sub2api-upstream-sync.ps1",
   "scripts\sub2api-verify-staging.ps1",

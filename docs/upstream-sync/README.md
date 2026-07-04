@@ -25,6 +25,12 @@ Doit API 采用“官方 Sub2API 源码 + Doit 定制层”的吸收模式：
 .\scripts\sub2api-local-audit.ps1
 ```
 
+查看当前开发状态、官方副本、target/staging 版本和健康端点：
+
+```powershell
+.\scripts\sub2api-status.ps1
+```
+
 只做 promotion dry-run：
 
 ```powershell

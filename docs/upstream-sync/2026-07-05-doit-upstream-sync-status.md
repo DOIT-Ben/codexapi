@@ -27,6 +27,7 @@
 - `docs\upstream-sync\2026-07-05-doit-local-diff-inventory.md`
 - `scripts\sub2api-upstream-sync.ps1`
 - `scripts\sub2api-refresh-upstream.ps1`
+- `scripts\sub2api-status.ps1`
 - `scripts\sub2api-verify-staging.ps1`
 - `scripts\sub2api-staging-compose.ps1`
 - `scripts\sub2api-local-audit.ps1`
