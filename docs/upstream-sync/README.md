@@ -88,6 +88,7 @@ push 前先运行：
 ## 定制层索引
 
 - `customizations\doit\README.md`：Doit overlay、active patch、retired patch 和更新流程。
+- `customizations\doit\manifest.json`：Doit 定制层的机器可读清单，声明 active overlay、active patch、品牌替换和 retired patch。
 - `customizations\doit\overlays\`：品牌、主题和布局覆盖文件。
 - `customizations\doit\patches\`：仍自动应用的 patch。
 - `customizations\doit\retired\`：历史 patch，只作证据，不自动应用。

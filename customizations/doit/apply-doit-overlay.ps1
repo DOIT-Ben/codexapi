@@ -6,6 +6,7 @@ param(
 $ErrorActionPreference = "Stop"
 $scriptRoot = Split-Path -Parent $MyInvocation.MyCommand.Path
 $overlayRoot = Join-Path $scriptRoot "overlays"
+$manifestPath = Join-Path $scriptRoot "manifest.json"
 
 function Resolve-FullPath {
   param([Parameter(Mandatory = $true)][string]$Path)
@@ -59,29 +60,28 @@ if (-not (Test-Path -LiteralPath $targetFull -PathType Container)) {
 if (-not (Test-Path -LiteralPath (Join-Path $targetFull "frontend\src") -PathType Container)) {
   throw "Target path does not look like Sub2API: $targetFull"
 }
+if (-not (Test-Path -LiteralPath $manifestPath -PathType Leaf)) {
+  throw "Doit manifest not found: $manifestPath"
+}
 
-$overlayFiles = @(
-  "frontend\tailwind.config.js",
-  "frontend\src\style.css",
-  "frontend\src\components\layout\AppLayout.vue",
-  "frontend\src\components\layout\AuthLayout.vue"
-)
+$manifest = Get-Content -LiteralPath $manifestPath -Raw | ConvertFrom-Json
+$overlayFiles = @($manifest.activeOverlayFiles)
+if ($overlayFiles.Count -eq 0) {
+  throw "Doit manifest has no activeOverlayFiles."
+}
 
 foreach ($relativePath in $overlayFiles) {
   Copy-OverlayFile -RelativePath $relativePath
 }
 
-$brandReplacements = @(
-  @("Sub2API", "Doit API"),
-  @("#10b981", "#2f8f5b"),
-  @("#f0fdf4", "#eef8ef")
-)
-
-$brandFiles = @(
-  "frontend\src\i18n\locales\en.ts",
-  "frontend\src\i18n\locales\zh.ts",
-  "frontend\src\components\layout\AuthLayout.vue"
-)
+$brandReplacements = @()
+foreach ($replacement in @($manifest.brandReplacements)) {
+  $brandReplacements += ,@([string]$replacement.from, [string]$replacement.to)
+}
+$brandFiles = @($manifest.brandFiles)
+if ($brandReplacements.Count -eq 0 -or $brandFiles.Count -eq 0) {
+  throw "Doit manifest must define brandReplacements and brandFiles."
+}
 
 foreach ($relativePath in $brandFiles) {
   Replace-InFile -RelativePath $relativePath -Replacements $brandReplacements

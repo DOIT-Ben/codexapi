@@ -2,6 +2,7 @@
 param(
   [string]$OfficialPath = ".\sub2api-official",
   [string]$StagingPath = "",
+  [string]$ManifestPath = ".\customizations\doit\manifest.json",
   [string]$PatchDir = ".\customizations\doit\patches",
   [switch]$Force
 )
@@ -57,6 +58,7 @@ $repoRoot = Get-RepoRoot
 Set-Location $repoRoot
 
 $officialFull = Resolve-PathFromRoot -Root $repoRoot -Path $OfficialPath
+$manifestFull = Resolve-PathFromRoot -Root $repoRoot -Path $ManifestPath
 $patchFull = Resolve-PathFromRoot -Root $repoRoot -Path $PatchDir
 $overlayScript = Resolve-PathFromRoot -Root $repoRoot -Path ".\customizations\doit\apply-doit-overlay.ps1"
 $allowedStagingRoot = [System.IO.Path]::GetFullPath((Join-Path $repoRoot "workbench\upstream-sync"))
@@ -67,6 +69,10 @@ if (-not (Test-Path -LiteralPath $officialFull -PathType Container)) {
 if (-not (Test-Path -LiteralPath (Join-Path $officialFull "backend\cmd\server\VERSION") -PathType Leaf)) {
   throw "Official source does not look like Sub2API: $officialFull"
 }
+if (-not (Test-Path -LiteralPath $manifestFull -PathType Leaf)) {
+  throw "Doit manifest not found: $manifestFull"
+}
+$manifest = Get-Content -LiteralPath $manifestFull -Raw | ConvertFrom-Json
 $officialVersion = (Get-Content -LiteralPath (Join-Path $officialFull "backend\cmd\server\VERSION") -Raw).Trim()
 if ([string]::IsNullOrWhiteSpace($StagingPath)) {
   $StagingPath = ".\workbench\upstream-sync\sub2api-doit-$officialVersion"
@@ -74,6 +80,10 @@ if ([string]::IsNullOrWhiteSpace($StagingPath)) {
 $stagingFull = Resolve-PathFromRoot -Root $repoRoot -Path $StagingPath
 if (-not (Test-Path -LiteralPath $patchFull -PathType Container)) {
   throw "Patch directory not found: $patchFull"
+}
+$overlayScriptName = [string]$manifest.overlayScript
+if (-not [string]::IsNullOrWhiteSpace($overlayScriptName)) {
+  $overlayScript = Resolve-PathFromRoot -Root $repoRoot -Path (Join-Path ".\customizations\doit" $overlayScriptName)
 }
 if (-not (Test-Path -LiteralPath $overlayScript -PathType Leaf)) {
   throw "Doit overlay script not found: $overlayScript"
@@ -105,9 +115,17 @@ if ($LASTEXITCODE -gt 7) {
 
 Invoke-Checked -FilePath "git" -Arguments @("-C", $stagingFull, "init", "-q")
 
-$patches = Get-ChildItem -LiteralPath $patchFull -Filter "*.patch" | Sort-Object Name
-if ($patches.Count -eq 0) {
-  throw "No active patches found in $patchFull"
+$activePatchNames = @($manifest.activePatches)
+if ($activePatchNames.Count -eq 0) {
+  throw "Doit manifest has no activePatches."
+}
+$patches = @()
+foreach ($patchName in $activePatchNames) {
+  $patchPath = Join-Path $patchFull $patchName
+  if (-not (Test-Path -LiteralPath $patchPath -PathType Leaf)) {
+    throw "Active patch from manifest not found: $patchPath"
+  }
+  $patches += Get-Item -LiteralPath $patchPath
 }
 
 $applied = @()

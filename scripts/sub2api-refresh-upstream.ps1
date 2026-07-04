@@ -3,6 +3,7 @@ param(
   [string]$OfficialPath = ".\sub2api-official",
   [string]$StagingRoot = ".\workbench\upstream-sync",
   [string]$TargetPath = ".\sub2api",
+  [string]$ManifestPath = ".\customizations\doit\manifest.json",
   [switch]$SkipFetch,
   [switch]$SkipSync,
   [switch]$SkipVerify,
@@ -72,10 +73,15 @@ Set-Location $repoRoot
 $officialFull = Resolve-PathFromRoot -Root $repoRoot -Path $OfficialPath
 $stagingRootFull = Resolve-PathFromRoot -Root $repoRoot -Path $StagingRoot
 $targetFull = Resolve-PathFromRoot -Root $repoRoot -Path $TargetPath
+$manifestFull = Resolve-PathFromRoot -Root $repoRoot -Path $ManifestPath
 
 if (-not (Test-Path -LiteralPath $officialFull -PathType Container)) {
   throw "Official source not found: $officialFull"
 }
+if (-not (Test-Path -LiteralPath $manifestFull -PathType Leaf)) {
+  throw "Doit manifest not found: $manifestFull"
+}
+$manifest = Get-Content -LiteralPath $manifestFull -Raw | ConvertFrom-Json
 
 if (-not $SkipFetch) {
   $officialStatus = (& git -C $officialFull status --porcelain)
@@ -101,6 +107,7 @@ if (-not $SkipSync) {
     "-File", (Join-Path $repoRoot "scripts\sub2api-upstream-sync.ps1"),
     "-OfficialPath", $officialFull,
     "-StagingPath", $stagingPath,
+    "-ManifestPath", $manifestFull,
     "-Force"
   )
 }
@@ -112,9 +119,9 @@ Write-Utf8NoBom -Path $lockPath -Lines @(
   "upstream_commit=$upstreamCommit",
   "upstream_version=$upstreamVersion",
   ("generated_at={0}" -f (Get-Date -Format "yyyy-MM-dd")),
-  "active_overlay=apply-doit-overlay.ps1",
-  "active_patches=0002-doit-local-docker-build.patch",
-  "retired_patches=0001-legacy-codex-import-shared-account.patch,0002-old-version-branding-theme-diff.patch"
+  ("active_overlay={0}" -f $manifest.overlayScript),
+  ("active_patches={0}" -f (@($manifest.activePatches) -join ",")),
+  ("retired_patches={0}" -f (@($manifest.retiredPatches) -join ","))
 )
 
 if (-not $SkipVerify) {
@@ -149,6 +156,7 @@ if ($WriteReport) {
     "-OfficialPath", $officialFull,
     "-TargetPath", $targetFull,
     "-StagingPath", $stagingPath,
+    "-ManifestPath", $manifestFull,
     "-ReportPath", $ReportPath
   )
   if ($CheckHttp) { $reportArgs += "-CheckHttp" }

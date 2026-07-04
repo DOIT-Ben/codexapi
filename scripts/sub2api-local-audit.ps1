@@ -253,6 +253,48 @@ function Test-RequiredAssetPresence {
   }
 }
 
+function Test-DoitManifest {
+  param([Parameter(Mandatory = $true)][string]$ManifestPath)
+  if (-not (Test-Path -LiteralPath $ManifestPath -PathType Leaf)) {
+    return [pscustomobject]@{
+      Ok = $false
+      Detail = "manifest missing"
+    }
+  }
+
+  $manifestRoot = Split-Path -Parent $ManifestPath
+  $manifest = Get-Content -LiteralPath $ManifestPath -Raw | ConvertFrom-Json
+  $missing = @()
+
+  foreach ($relativePath in @($manifest.activeOverlayFiles)) {
+    if (-not (Test-Path -LiteralPath (Join-Path $manifestRoot "overlays\$relativePath") -PathType Leaf)) {
+      $missing += "overlay:$relativePath"
+    }
+  }
+  foreach ($patchName in @($manifest.activePatches)) {
+    if (-not (Test-Path -LiteralPath (Join-Path $manifestRoot "patches\$patchName") -PathType Leaf)) {
+      $missing += "patch:$patchName"
+    }
+  }
+  foreach ($patchName in @($manifest.retiredPatches)) {
+    if (-not (Test-Path -LiteralPath (Join-Path $manifestRoot "retired\$patchName") -PathType Leaf)) {
+      $missing += "retired:$patchName"
+    }
+  }
+
+  if ($missing.Count -gt 0) {
+    return [pscustomobject]@{
+      Ok = $false
+      Detail = "missing: $($missing -join ', ')"
+    }
+  }
+
+  return [pscustomobject]@{
+    Ok = $true
+    Detail = "overlay=$(@($manifest.activeOverlayFiles).Count), patches=$(@($manifest.activePatches).Count), retired=$(@($manifest.retiredPatches).Count)"
+  }
+}
+
 $script:AuditFailed = $false
 $repoRoot = Get-RepoRoot
 Set-Location $repoRoot
@@ -285,6 +327,7 @@ Write-Check -Name "sensitive value assignment patterns" -Ok ($sensitiveHits.Coun
 
 $requiredAssets = @(
   "AGENTS.md",
+  "customizations\doit\manifest.json",
   "scripts\sub2api-dev.ps1",
   "scripts\sub2api-local-audit.ps1",
   "scripts\sub2api-promote-staging.ps1",
@@ -318,6 +361,9 @@ $requiredAssets = @(
 )
 $requiredAssetsCheck = Test-RequiredAssetPresence -Root $repoRoot -RelativePaths $requiredAssets
 Write-Check -Name "required upstream-sync assets are present" -Ok $requiredAssetsCheck.Ok -Detail $requiredAssetsCheck.Detail
+
+$manifestCheck = Test-DoitManifest -ManifestPath (Join-Path $repoRoot "customizations\doit\manifest.json")
+Write-Check -Name "Doit manifest references are valid" -Ok $manifestCheck.Ok -Detail $manifestCheck.Detail
 
 $ignoredPaths = @(
   "sub2api-official",

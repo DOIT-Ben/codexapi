@@ -2,6 +2,10 @@
 
 This directory contains the Doit-specific overlay for official Sub2API.
 
+## Manifest
+
+`manifest.json` is the machine-readable source of truth for Doit customizations. It lists the active overlay files, active patches, brand replacement rules, brand replacement target files, and retired patches.
+
 ## Active Overlay
 
 `apply-doit-overlay.ps1` copies maintained Doit theme files into the generated staging copy and applies brand replacements to official i18n files.
@@ -13,11 +17,15 @@ Overlay files live in `overlays\`:
 - `frontend\src\components\layout\AppLayout.vue`
 - `frontend\src\components\layout\AuthLayout.vue`
 
+Keep this list synchronized through `manifest.json`; scripts read the manifest instead of scanning the directory.
+
 ## Active Patches
 
 Active patches live in `patches\` and are applied in filename order by `scripts\sub2api-upstream-sync.ps1`.
 
 - `0002-doit-local-docker-build.patch`: local Docker image name and pinned pnpm build version.
+
+Active patches are applied in the exact order declared by `manifest.json`.
 
 ## Retired Patches
 

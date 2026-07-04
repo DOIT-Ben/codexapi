@@ -20,6 +20,7 @@
 
 - `scripts\sub2api-dev.ps1`
 - `customizations\doit\apply-doit-overlay.ps1`
+- `customizations\doit\manifest.json`
 - `customizations\doit\docker-compose.staging.yml`
 - `customizations\doit\overlays\`
 - `customizations\doit\patches\0002-doit-local-docker-build.patch`

@@ -3,6 +3,7 @@ param(
   [string]$OfficialPath = ".\sub2api-official",
   [string]$TargetPath = ".\sub2api",
   [string]$StagingPath = "",
+  [string]$ManifestPath = ".\customizations\doit\manifest.json",
   [string]$ReportPath = "",
   [switch]$CheckHttp,
   [string]$TargetHealthUrl = "http://127.0.0.1:18082/health",
@@ -115,8 +116,13 @@ if ([string]::IsNullOrWhiteSpace($StagingPath)) {
 $officialFull = Resolve-PathFromRoot -Root $repoRoot -Path $OfficialPath
 $targetFull = Resolve-PathFromRoot -Root $repoRoot -Path $TargetPath
 $stagingFull = Resolve-PathFromRoot -Root $repoRoot -Path $StagingPath
+$manifestFull = Resolve-PathFromRoot -Root $repoRoot -Path $ManifestPath
 $overlayRoot = Join-Path $repoRoot "customizations\doit\overlays"
 $patchRoot = Join-Path $repoRoot "customizations\doit\patches"
+$manifest = $null
+if (Test-Path -LiteralPath $manifestFull -PathType Leaf) {
+  $manifest = Get-Content -LiteralPath $manifestFull -Raw | ConvertFrom-Json
+}
 
 $officialCommit = if (Test-Path -LiteralPath $officialFull -PathType Container) { (& git -C $officialFull rev-parse HEAD).Trim() } else { "" }
 $officialRemote = if (Test-Path -LiteralPath $officialFull -PathType Container) { (& git -C $officialFull remote get-url origin).Trim() } else { "" }
@@ -125,14 +131,18 @@ $targetVersion = if (Test-Path -LiteralPath $targetFull -PathType Container) { G
 $stagingVersion = if (Test-Path -LiteralPath $stagingFull -PathType Container) { Get-Version -ProjectPath $stagingFull } else { "" }
 
 $overlayFiles = @()
-if (Test-Path -LiteralPath $overlayRoot -PathType Container) {
+if ($manifest -and $manifest.activeOverlayFiles) {
+  $overlayFiles = @($manifest.activeOverlayFiles)
+} elseif (Test-Path -LiteralPath $overlayRoot -PathType Container) {
   $overlayFiles = Get-ChildItem -LiteralPath $overlayRoot -Recurse -File |
     Sort-Object FullName |
     ForEach-Object { $_.FullName.Substring($overlayRoot.Length + 1) }
 }
 
 $activePatches = @()
-if (Test-Path -LiteralPath $patchRoot -PathType Container) {
+if ($manifest -and $manifest.activePatches) {
+  $activePatches = @($manifest.activePatches)
+} elseif (Test-Path -LiteralPath $patchRoot -PathType Container) {
   $activePatches = Get-ChildItem -LiteralPath $patchRoot -Filter "*.patch" |
     Sort-Object Name |
     ForEach-Object { $_.Name }

@@ -1,0 +1,41 @@
+{
+  "name": "doit",
+  "displayName": "Doit API",
+  "upstream": {
+    "repo": "https://github.com/Wei-Shaw/sub2api.git",
+    "ref": "main"
+  },
+  "overlayScript": "apply-doit-overlay.ps1",
+  "activeOverlayFiles": [
+    "frontend\\tailwind.config.js",
+    "frontend\\src\\style.css",
+    "frontend\\src\\components\\layout\\AppLayout.vue",
+    "frontend\\src\\components\\layout\\AuthLayout.vue"
+  ],
+  "activePatches": [
+    "0002-doit-local-docker-build.patch"
+  ],
+  "brandReplacements": [
+    {
+      "from": "Sub2API",
+      "to": "Doit API"
+    },
+    {
+      "from": "#10b981",
+      "to": "#2f8f5b"
+    },
+    {
+      "from": "#f0fdf4",
+      "to": "#eef8ef"
+    }
+  ],
+  "brandFiles": [
+    "frontend\\src\\i18n\\locales\\en.ts",
+    "frontend\\src\\i18n\\locales\\zh.ts",
+    "frontend\\src\\components\\layout\\AuthLayout.vue"
+  ],
+  "retiredPatches": [
+    "0001-legacy-codex-import-shared-account.patch",
+    "0002-old-version-branding-theme-diff.patch"
+  ]
+}
