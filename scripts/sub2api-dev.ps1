@@ -1,6 +1,6 @@
 [CmdletBinding()]
 param(
-  [ValidateSet("status", "audit", "refresh", "preflight", "snapshot", "gate", "promote-dryrun", "rollback-dryrun", "push-preflight")]
+  [ValidateSet("status", "audit", "upstream-watch", "refresh", "preflight", "snapshot", "gate", "promote-dryrun", "rollback-dryrun", "push-preflight")]
   [string]$Action = "status",
   [string]$BackupPath = "",
   [switch]$CheckRemote,
@@ -64,6 +64,9 @@ switch ($Action) {
     $args = @()
     if ($SkipHttp) { $args += "-SkipHttp" }
     Invoke-Script -ScriptName "sub2api-local-audit.ps1" -Arguments $args
+  }
+  "upstream-watch" {
+    Invoke-Script -ScriptName "sub2api-upstream-watch.ps1"
   }
   "refresh" {
     $args = @("-RunAudit", "-WriteReport", "-RunPreflight")

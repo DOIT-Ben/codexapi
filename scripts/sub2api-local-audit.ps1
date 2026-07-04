@@ -341,6 +341,7 @@ $requiredAssets = @(
   "scripts\sub2api-status.ps1",
   "scripts\sub2api-upstream-report.ps1",
   "scripts\sub2api-upstream-sync.ps1",
+  "scripts\sub2api-upstream-watch.ps1",
   "scripts\sub2api-verify-staging.ps1",
   "docs\upstream-sync\README.md",
   "docs\upstream-sync\2026-07-05-doit-local-diff-inventory.md",
