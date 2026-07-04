@@ -104,6 +104,25 @@ function Add-Check {
   })
 }
 
+function Test-PatchApplied {
+  param(
+    [Parameter(Mandatory = $true)][string]$StagingPath,
+    [Parameter(Mandatory = $true)][string]$PatchPath
+  )
+  if (-not (Test-Path -LiteralPath $PatchPath -PathType Leaf)) {
+    return [pscustomobject]@{
+      Ok = $false
+      Detail = "patch missing"
+    }
+  }
+  $output = @(& git -C $StagingPath apply --reverse --check --whitespace=nowarn $PatchPath 2>&1 | ForEach-Object { [string]$_ })
+  $exitCode = $LASTEXITCODE
+  return [pscustomobject]@{
+    Ok = ($exitCode -eq 0)
+    Detail = $(if ($exitCode -eq 0) { "reverse check passed" } else { "reverse check failed: $($output -join '; ')" })
+  }
+}
+
 $repoRoot = Get-RepoRoot
 Set-Location $repoRoot
 
@@ -124,10 +143,12 @@ if ([string]::IsNullOrWhiteSpace($StagingPath)) {
 $stagingFull = Resolve-PathFromRoot -Root $repoRoot -Path $StagingPath
 $customRoot = Split-Path -Parent $manifestFull
 $overlayRoot = Join-Path $customRoot "overlays"
+$patchRoot = Join-Path $customRoot "patches"
 $manifest = Get-Content -LiteralPath $manifestFull -Raw | ConvertFrom-Json
 
 $checks = New-Object System.Collections.Generic.List[object]
 Add-Check -Checks $checks -Name "staging exists" -Ok (Test-Path -LiteralPath $stagingFull -PathType Container) -Detail $stagingFull
+Add-Check -Checks $checks -Name "staging git metadata exists" -Ok (Test-Path -LiteralPath (Join-Path $stagingFull ".git") -PathType Container) -Detail (Join-Path $stagingFull ".git")
 
 foreach ($relativePath in @($manifest.activeOverlayFiles)) {
   $overlayPath = Join-Path $overlayRoot $relativePath
@@ -152,6 +173,12 @@ if ($brandReplacement.Count -gt 0) {
     $ok = $content.Contains([string]$brandReplacement[0].to) -and -not $content.Contains([string]$brandReplacement[0].from)
     Add-Check -Checks $checks -Name "brand replacement applied $relativePath" -Ok $ok -Detail "$($brandReplacement[0].from) -> $($brandReplacement[0].to)"
   }
+}
+
+foreach ($patchName in @($manifest.activePatches)) {
+  $patchPath = Join-Path $patchRoot $patchName
+  $patchCheck = Test-PatchApplied -StagingPath $stagingFull -PatchPath $patchPath
+  Add-Check -Checks $checks -Name "active patch applied $patchName" -Ok $patchCheck.Ok -Detail $patchCheck.Detail
 }
 
 $failed = @($checks | Where-Object { -not $_.ok })
