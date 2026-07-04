@@ -131,4 +131,31 @@ Invoke-WebRequest -Uri "http://127.0.0.1:18082/" -UseBasicParsing
 Get-ChildItem .\backups\sub2api-promote | Sort-Object LastWriteTime -Descending | Select-Object -First 1
 ```
 
-将备份源码恢复到 `sub2api`。运行时数据仍保留在原 `sub2api\deploy` 目录，回退前不要删除数据目录。
+先做回退 dry-run：
+
+```powershell
+.\scripts\sub2api-rollback-promotion.ps1
+```
+
+如果需要指定某个备份：
+
+```powershell
+.\scripts\sub2api-rollback-promotion.ps1 -BackupPath .\backups\sub2api-promote\sub2api_YYYYMMDD-HHMMSS
+```
+
+dry-run 会写入机器可读计划：
+
+```powershell
+workbench\upstream-sync\reports\sub2api-rollback-plan-latest.json
+```
+
+执行回退前必须先停旧容器。脚本默认会检查 `http://127.0.0.1:18082/health`，如果目标仍可访问，会拒绝热覆盖。
+
+```powershell
+cd sub2api\deploy
+docker compose -f docker-compose.local.yml down
+cd ..\..
+.\scripts\sub2api-rollback-promotion.ps1 -Execute
+```
+
+运行时数据仍保留在原 `sub2api\deploy` 目录，回退前不要删除数据目录。只有在明确接受热覆盖风险时，才允许追加 `-AllowRunningTarget`。
