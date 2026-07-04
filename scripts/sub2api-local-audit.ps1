@@ -328,6 +328,7 @@ Write-Check -Name "sensitive value assignment patterns" -Ok ($sensitiveHits.Coun
 $requiredAssets = @(
   "AGENTS.md",
   "customizations\doit\manifest.json",
+  "scripts\sub2api-customization-check.ps1",
   "scripts\sub2api-dev.ps1",
   "scripts\sub2api-local-audit.ps1",
   "scripts\sub2api-promote-staging.ps1",

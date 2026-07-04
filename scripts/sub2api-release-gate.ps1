@@ -5,6 +5,7 @@ param(
   [switch]$CheckRemote,
   [switch]$SkipHttp,
   [switch]$SkipAudit,
+  [switch]$SkipCustomizationCheck,
   [switch]$AllowUnsyncedGit,
   [switch]$AllowUpstreamDelta
 )
@@ -92,6 +93,21 @@ if (-not $SkipAudit) {
   $auditCapture["exit_code"] = $audit.exit_code
 }
 
+$customizationCapture = [ordered]@{
+  skipped = [bool]$SkipCustomizationCheck
+  exit_code = $null
+}
+if (-not $SkipCustomizationCheck) {
+  $customization = Invoke-Capture -FilePath "powershell" -Arguments @(
+    "-NoProfile",
+    "-ExecutionPolicy",
+    "Bypass",
+    "-File",
+    (Join-Path $repoRoot "scripts\sub2api-customization-check.ps1")
+  )
+  $customizationCapture["exit_code"] = $customization.exit_code
+}
+
 $snapshotArgs = @(
   "-NoProfile",
   "-ExecutionPolicy",
@@ -126,6 +142,7 @@ $snapshot = Get-Content -LiteralPath $snapshotFull -Raw | ConvertFrom-Json
 $checks = New-Object System.Collections.Generic.List[object]
 
 Add-GateCheck -Checks $checks -Name "local audit" -Ok ($SkipAudit -or $auditCapture.exit_code -eq 0) -Detail $(if ($SkipAudit) { "skipped" } else { "exit=$($auditCapture.exit_code)" })
+Add-GateCheck -Checks $checks -Name "customization check" -Ok ($SkipCustomizationCheck -or $customizationCapture.exit_code -eq 0) -Detail $(if ($SkipCustomizationCheck) { "skipped" } else { "exit=$($customizationCapture.exit_code)" })
 Add-GateCheck -Checks $checks -Name "git synced with origin" -Ok ($AllowUnsyncedGit -or [bool]$snapshot.git.synced_with_origin) -Detail "head=$($snapshot.git.head), origin=$($snapshot.git.origin_main)"
 Add-GateCheck -Checks $checks -Name "official upstream clean" -Ok ($snapshot.official.status -eq "clean") -Detail $snapshot.official.status
 Add-GateCheck -Checks $checks -Name "official remote delta" -Ok ($AllowUpstreamDelta -or $snapshot.official.remote_delta -eq "none" -or $snapshot.official.remote_delta -eq "unknown") -Detail $snapshot.official.remote_delta
@@ -146,6 +163,7 @@ $record = [ordered]@{
   generated_at = (Get-Date -Format "yyyy-MM-dd HH:mm:ss")
   result = $result
   audit = $auditCapture
+  customization = $customizationCapture
   snapshot = [ordered]@{
     path = $snapshotFull
     exit_code = $snapshotCapture.exit_code
