@@ -77,7 +77,7 @@
 
 ## 执行替换
 
-执行前建议先停旧容器：
+执行前必须先停旧容器。`sub2api-promote-staging.ps1 -Execute` 默认会检查 `http://127.0.0.1:18082/health`，如果旧项目仍可访问，会拒绝热覆盖。
 
 ```powershell
 cd sub2api\deploy
@@ -92,6 +92,8 @@ cd ..\..
 ```
 
 `-Execute` 会再次检查升级吸收报告是否匹配当前 target/staging 版本和官方 commit；报告缺失或过期时会拒绝替换。
+
+只有在明确接受热覆盖风险时，才允许追加 `-AllowRunningTarget`。默认流程不要使用该参数。
 
 替换后构建并启动：
 

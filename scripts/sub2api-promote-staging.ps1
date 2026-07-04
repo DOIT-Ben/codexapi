@@ -4,6 +4,8 @@ param(
   [string]$TargetPath = ".\sub2api",
   [string]$BackupRoot = ".\backups\sub2api-promote",
   [string]$ReportPath = "",
+  [string]$TargetHealthUrl = "http://127.0.0.1:18082/health",
+  [switch]$AllowRunningTarget,
   [switch]$Execute
 )
 
@@ -112,6 +114,22 @@ function Test-AbsorptionReport {
   }
 }
 
+function Test-HttpReachable {
+  param([Parameter(Mandatory = $true)][string]$Url)
+  try {
+    $response = Invoke-WebRequest -Uri $Url -UseBasicParsing -TimeoutSec 5
+    return [pscustomobject]@{
+      Ok = ($response.StatusCode -ge 200 -and $response.StatusCode -lt 500)
+      Detail = "status=$($response.StatusCode)"
+    }
+  } catch {
+    return [pscustomobject]@{
+      Ok = $false
+      Detail = $_.Exception.Message
+    }
+  }
+}
+
 $repoRoot = Get-RepoRoot
 Set-Location $repoRoot
 
@@ -153,6 +171,7 @@ foreach ($required in @("backend\cmd\server\VERSION", "frontend\package.json", "
 $version = Get-Version -ProjectPath $stagingFull
 $targetVersion = Get-Version -ProjectPath $targetFull
 $reportCheck = Test-AbsorptionReport -Path $reportFull -TargetVersion $targetVersion -StagingVersion $version -OfficialCommit $lockCommit
+$targetHealth = Test-HttpReachable -Url $TargetHealthUrl
 $timestamp = Get-Date -Format "yyyyMMdd-HHmmss"
 $backupFull = Join-Path $backupRootFull "sub2api_$timestamp"
 
@@ -176,6 +195,7 @@ Write-Host "  backup:  $backupFull"
 Write-Host "  report:  $reportFull"
 Write-Host "  version: $version"
 Write-Host "  report check: $($reportCheck.Detail)"
+Write-Host "  target health: $TargetHealthUrl $($targetHealth.Detail)"
 Write-Host "Preserved runtime paths:"
 foreach ($path in ($preserveDirs + $preserveFiles)) {
   Write-Host "  - $path"
@@ -183,12 +203,15 @@ foreach ($path in ($preserveDirs + $preserveFiles)) {
 
 if (-not $Execute) {
   Write-Host ""
-  Write-Host "Dry run only. Re-run with -Execute to promote staging into the current sub2api directory."
+  Write-Host "Dry run only. Stop the target runtime first, then re-run with -Execute to promote staging into the current sub2api directory."
   exit 0
 }
 
 if (-not $reportCheck.Ok) {
   throw "Refusing to execute promotion because the upstream absorption report is not current: $($reportCheck.Detail)"
+}
+if ($targetHealth.Ok -and -not $AllowRunningTarget) {
+  throw "Refusing to execute promotion while the target runtime is reachable at $TargetHealthUrl ($($targetHealth.Detail)). Stop the target container first, or pass -AllowRunningTarget only for an intentional hot overwrite."
 }
 
 New-Item -ItemType Directory -Path $backupFull -Force | Out-Null
