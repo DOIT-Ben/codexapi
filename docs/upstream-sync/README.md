@@ -20,6 +20,7 @@ Doit API 采用“官方 Sub2API 源码 + Doit 定制层”的吸收模式：
 .\scripts\sub2api-dev.ps1 refresh
 .\scripts\sub2api-dev.ps1 preflight
 .\scripts\sub2api-dev.ps1 snapshot
+.\scripts\sub2api-dev.ps1 gate
 .\scripts\sub2api-dev.ps1 promote-dryrun
 .\scripts\sub2api-dev.ps1 rollback-dryrun
 ```
@@ -69,6 +70,7 @@ Doit API 采用“官方 Sub2API 源码 + Doit 定制层”的吸收模式：
 promotion dry-run 和 execute 都会写入 `workbench\upstream-sync\reports\sub2api-promotion-plan-latest.json`，记录版本、路径、备份位置、报告检查、健康检查和保留项。
 promotion 回退 dry-run 和 execute 会写入 `workbench\upstream-sync\reports\sub2api-rollback-plan-latest.json`，记录备份路径、目标路径、版本、健康检查和保留项。
 发布就绪快照会写入 `workbench\upstream-sync\reports\sub2api-release-snapshot-latest.json`，记录 git、官方、版本、健康、preflight 和 promotion/rollback plan 状态。
+发布门禁会写入 `workbench\upstream-sync\reports\sub2api-release-gate-latest.json`，并在本地审计、git 同步、官方远端、健康检查和 promotion preflight 都满足时返回 PASS。
 
 ## 推送边界
 

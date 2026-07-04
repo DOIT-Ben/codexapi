@@ -1,6 +1,6 @@
 [CmdletBinding()]
 param(
-  [ValidateSet("status", "audit", "refresh", "preflight", "snapshot", "promote-dryrun", "rollback-dryrun", "push-preflight")]
+  [ValidateSet("status", "audit", "refresh", "preflight", "snapshot", "gate", "promote-dryrun", "rollback-dryrun", "push-preflight")]
   [string]$Action = "status",
   [string]$BackupPath = "",
   [switch]$CheckRemote,
@@ -81,6 +81,12 @@ switch ($Action) {
     if ($CheckRemote) { $args += "-CheckRemote" }
     if ($SkipHttp) { $args += "-SkipHttp" }
     Invoke-Script -ScriptName "sub2api-release-snapshot.ps1" -Arguments $args
+  }
+  "gate" {
+    $args = @()
+    if ($CheckRemote) { $args += "-CheckRemote" }
+    if ($SkipHttp) { $args += "-SkipHttp" }
+    Invoke-Script -ScriptName "sub2api-release-gate.ps1" -Arguments $args
   }
   "promote-dryrun" {
     Invoke-Script -ScriptName "sub2api-promote-staging.ps1"

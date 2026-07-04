@@ -333,6 +333,7 @@ $requiredAssets = @(
   "scripts\sub2api-promote-staging.ps1",
   "scripts\sub2api-promotion-preflight.ps1",
   "scripts\sub2api-push-preflight.ps1",
+  "scripts\sub2api-release-gate.ps1",
   "scripts\sub2api-release-snapshot.ps1",
   "scripts\sub2api-refresh-upstream.ps1",
   "scripts\sub2api-rollback-promotion.ps1",
