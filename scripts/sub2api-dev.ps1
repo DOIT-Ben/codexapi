@@ -1,0 +1,84 @@
+[CmdletBinding()]
+param(
+  [ValidateSet("status", "audit", "refresh", "preflight", "promote-dryrun", "push-preflight")]
+  [string]$Action = "status",
+  [switch]$CheckRemote,
+  [switch]$SkipHttp,
+  [switch]$Fast
+)
+
+$ErrorActionPreference = "Stop"
+
+function Get-RepoRoot {
+  $root = (& git rev-parse --show-toplevel 2>$null)
+  if ($LASTEXITCODE -ne 0 -or [string]::IsNullOrWhiteSpace($root)) {
+    throw "This script must run inside the codexapi git repository."
+  }
+  return [System.IO.Path]::GetFullPath($root.Trim())
+}
+
+function Invoke-Checked {
+  param(
+    [Parameter(Mandatory = $true)][string]$FilePath,
+    [Parameter(Mandatory = $true)][string[]]$Arguments
+  )
+  & $FilePath @Arguments
+  if ($LASTEXITCODE -ne 0) {
+    throw "Command failed: $FilePath $($Arguments -join ' ')"
+  }
+}
+
+function Invoke-Script {
+  param(
+    [Parameter(Mandatory = $true)][string]$ScriptName,
+    [string[]]$Arguments = @()
+  )
+  $scriptPath = Join-Path $script:RepoRoot "scripts\$ScriptName"
+  $powershellArgs = @(
+    "-NoProfile",
+    "-ExecutionPolicy",
+    "Bypass",
+    "-File",
+    $scriptPath
+  )
+  $powershellArgs += $Arguments
+  Invoke-Checked -FilePath "powershell" -Arguments $powershellArgs
+}
+
+$script:RepoRoot = Get-RepoRoot
+Set-Location $script:RepoRoot
+
+Write-Host "Sub2API dev entry"
+Write-Host "Repo:   $script:RepoRoot"
+Write-Host "Action: $Action"
+Write-Host ""
+
+switch ($Action) {
+  "status" {
+    $args = @()
+    if ($CheckRemote) { $args += "-CheckRemote" }
+    Invoke-Script -ScriptName "sub2api-status.ps1" -Arguments $args
+  }
+  "audit" {
+    $args = @()
+    if ($SkipHttp) { $args += "-SkipHttp" }
+    Invoke-Script -ScriptName "sub2api-local-audit.ps1" -Arguments $args
+  }
+  "refresh" {
+    $args = @("-RunAudit", "-WriteReport", "-RunPreflight")
+    if (-not $SkipHttp) { $args += "-CheckHttp" }
+    if ($Fast) {
+      $args += @("-SkipFrontendBuild", "-SkipBackendTest")
+    }
+    Invoke-Script -ScriptName "sub2api-refresh-upstream.ps1" -Arguments $args
+  }
+  "preflight" {
+    Invoke-Script -ScriptName "sub2api-promotion-preflight.ps1"
+  }
+  "promote-dryrun" {
+    Invoke-Script -ScriptName "sub2api-promote-staging.ps1"
+  }
+  "push-preflight" {
+    Invoke-Script -ScriptName "sub2api-push-preflight.ps1"
+  }
+}

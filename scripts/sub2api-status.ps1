@@ -83,7 +83,14 @@ function Get-RelativePath {
     [Parameter(Mandatory = $true)][string]$Root,
     [Parameter(Mandatory = $true)][string]$Path
   )
-  return [System.IO.Path]::GetRelativePath($Root, $Path).Replace("/", "\")
+  $rootFull = [System.IO.Path]::GetFullPath($Root).TrimEnd(
+    [System.IO.Path]::DirectorySeparatorChar,
+    [System.IO.Path]::AltDirectorySeparatorChar
+  ) + [System.IO.Path]::DirectorySeparatorChar
+  $pathFull = [System.IO.Path]::GetFullPath($Path)
+  $rootUri = [System.Uri]::new($rootFull)
+  $pathUri = [System.Uri]::new($pathFull)
+  return [System.Uri]::UnescapeDataString($rootUri.MakeRelativeUri($pathUri).ToString()).Replace("/", "\")
 }
 
 $repoRoot = Get-RepoRoot
@@ -127,8 +134,8 @@ Write-Host "  commit:  $lockCommit"
 Write-Host ""
 
 Write-Host "Project versions"
-Write-Host "  target:  $(Get-ProjectVersion -ProjectPath $targetFull) ($([System.IO.Path]::GetRelativePath($repoRoot, $targetFull)))"
-Write-Host "  staging: $(Get-ProjectVersion -ProjectPath $stagingFull) ($([System.IO.Path]::GetRelativePath($repoRoot, $stagingFull)))"
+Write-Host "  target:  $(Get-ProjectVersion -ProjectPath $targetFull) ($(Get-RelativePath -Root $repoRoot -Path $targetFull))"
+Write-Host "  staging: $(Get-ProjectVersion -ProjectPath $stagingFull) ($(Get-RelativePath -Root $repoRoot -Path $stagingFull))"
 Write-Host ""
 
 Write-Host "Official clone"

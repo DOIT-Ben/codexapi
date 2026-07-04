@@ -18,6 +18,7 @@
 
 ## 已落地资产
 
+- `scripts\sub2api-dev.ps1`
 - `customizations\doit\apply-doit-overlay.ps1`
 - `customizations\doit\docker-compose.staging.yml`
 - `customizations\doit\overlays\`

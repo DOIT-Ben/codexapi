@@ -13,6 +13,15 @@ Doit API 采用“官方 Sub2API 源码 + Doit 定制层”的吸收模式：
 
 ## 推荐命令
 
+日常开发统一入口：
+
+```powershell
+.\scripts\sub2api-dev.ps1 status
+.\scripts\sub2api-dev.ps1 refresh
+.\scripts\sub2api-dev.ps1 preflight
+.\scripts\sub2api-dev.ps1 promote-dryrun
+```
+
 刷新官方、套 Doit 定制、验证 staging、生成证据报告并运行 preflight：
 
 ```powershell
